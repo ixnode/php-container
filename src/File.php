@@ -13,10 +13,12 @@ declare(strict_types=1);
 
 namespace Ixnode\PhpContainer;
 
+use Composer\Autoload\ClassLoader;
 use Ixnode\PhpContainer\Base\BaseContainer;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use ReflectionClass;
 use Stringable;
 
 /**
@@ -28,16 +30,20 @@ use Stringable;
  */
 class File extends BaseContainer implements Stringable
 {
+    private const FORMAT_DATE_DEFAULT = 'l, F d, Y - H:i:s';
+
+    private ?string $directoryRoot = null;
+
     /**
      * File constructor.
      *
      * @param string $path
-     * @param string|null $pathRoot
+     * @param string|null $rootDir
      */
-    public function __construct(protected string $path, ?string $pathRoot = null)
+    public function __construct(protected string $path, ?string $rootDir = null)
     {
-        if ($pathRoot !== null) {
-            $this->setPath(sprintf('%s/%s', $pathRoot, $this->getPath()));
+        if ($rootDir !== null) {
+            $this->setPath(sprintf('%s/%s', $rootDir, $this->getPath()));
         }
     }
 
@@ -167,15 +173,21 @@ class File extends BaseContainer implements Stringable
      * @return string
      * @throws FileNotFoundException
      */
-    public function getRealPath(): string
+    public function getPathReal(): string
     {
         $realPath = realpath($this->getPath());
 
-        if ($realPath === false) {
-            throw new FileNotFoundException($this->getPath());
+        if ($realPath !== false) {
+            return $realPath;
         }
 
-        return $realPath;
+        $realPath = realpath(sprintf('%s/%s', $this->getDirectoryRoot(), $this->getPath()));
+
+        if ($realPath !== false) {
+            return $realPath;
+        }
+
+        throw new FileNotFoundException($this->getPath());
     }
 
     /**
@@ -189,6 +201,29 @@ class File extends BaseContainer implements Stringable
     }
 
     /**
+     * Returns the root directory.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getDirectoryRoot(): string
+    {
+        if (!is_null($this->directoryRoot)) {
+            return $this->directoryRoot;
+        }
+
+        $reflection = new ReflectionClass(ClassLoader::class);
+
+        $fileName = $reflection->getFileName();
+
+        if ($fileName === false) {
+            throw new FileNotFoundException('Composer ClassLoader');
+        }
+
+        return dirname($fileName, 3);
+    }
+
+    /**
      * Returns real directory path of file.
      *
      * @return string
@@ -196,7 +231,27 @@ class File extends BaseContainer implements Stringable
      */
     public function getRealDirectoryPath(): string
     {
-        return dirname($this->getRealPath());
+        return dirname($this->getPathReal());
+    }
+
+    /**
+     * Returns the date according to given path.
+     *
+     * @param string $format
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getDate(string $format = self::FORMAT_DATE_DEFAULT): string
+    {
+        $path = $this->getPathReal();
+
+        $mtime = filemtime($path);
+
+        if ($mtime === false) {
+            throw new FileNotFoundException($this->getPath());
+        }
+
+        return date($format, $mtime);
     }
 
     /**
@@ -208,7 +263,7 @@ class File extends BaseContainer implements Stringable
      */
     public function getContentAsText(): string
     {
-        $realPath = $this->getRealPath();
+        $realPath = $this->getPathReal();
 
         $content = file_get_contents($realPath);
 

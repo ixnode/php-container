@@ -60,7 +60,7 @@ final class FileTest extends TestCase
         $expected = sprintf('%s/%s', $this->getRootPath(), $path);
 
         /* Act */
-        $realPath = (new File($path))->getRealPath();
+        $realPath = (new File($path))->getPathReal();
 
         /* Assert */
         $this->assertIsNumeric($number); // To avoid phpmd warning.
