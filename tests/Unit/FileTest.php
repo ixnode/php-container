@@ -77,8 +77,8 @@ final class FileTest extends TestCase
         $number = 0;
 
         return [
-            [++$number, 'data/simple.json', true, ],
-            [++$number, 'data/does-not-exist.json', false, ],
+            [++$number, 'data/json/simple.json', true, ],
+            [++$number, 'data/json/does-not-exist.json', false, ],
         ];
     }
 }
