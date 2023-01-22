@@ -302,6 +302,41 @@ class Json implements Stringable
     }
 
     /**
+     * Returns the given key as boolean representation.
+     *
+     * @param string|string[] $keys
+     * @return bool
+     * @throws ArrayKeyNotFoundException
+     * @throws TypeInvalidException
+     */
+    public function isKeyBoolean(string|array $keys): bool
+    {
+        $value = $this->getKey($keys);
+
+        if (is_string($value)) {
+            match (true) {
+                in_array($value, ["false", "0"]) => $value = false,
+                in_array($value, ["true", "1"]) => $value = true,
+                default => null,
+            };
+        }
+
+        if (is_int($value)) {
+            match ($value) {
+                0 => $value = false,
+                1 => $value = true,
+                default => null,
+            };
+        }
+
+        if (!is_bool($value)) {
+            throw new TypeInvalidException('string', gettype($value));
+        }
+
+        return $value;
+    }
+
+    /**
      * Returns the given key as string representation.
      *
      * @param string|string[] $keys
