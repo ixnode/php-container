@@ -24,9 +24,24 @@ php-container 0.1.0 (12-19-2022 01:17:26) - Björn Hempel <bjoern@hempel.li>
 
 ## Usage
 
+### File
+
+```php
+use Ixnode\PhpContainer\File;
+```
+
+```php
+$exists = (new File('path-to-file'))->exist();
+```
+
+```php
+$fileSize = (new File('path-to-file'))->getFileSize();
+```
+
+### JSON
+
 ```php
 use Ixnode\PhpContainer\Json;
-use Ixnode\PhpContainer\File;
 ```
 
 ```php
@@ -38,15 +53,27 @@ $array = (new Json('{"data": "json"}'))->getArray();
 ```
 
 ```php
-$exists = (new File('path-to-file'))->exist();
-```
-
-```php
-$fileSize = (new File('path-to-file'))->getFileSize();
-```
-
-```php
 $array = (new Json(new File('path-to-json-file')))->getArray();
+```
+
+### CSV
+
+```php
+use Ixnode\PhpContainer\Csv;
+```
+
+```php
+$array = (new Csv(new File('path-to-csv-file')))->getArray();
+```
+
+### Curl
+
+```php
+use Ixnode\PhpContainer\Curl;
+```
+
+```php
+$text = (new Curl('URL')->getContentAsText();
 ```
 
 ## Development

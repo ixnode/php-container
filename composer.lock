@@ -4,24 +4,24 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1a66d402336a0766c0fa7a6e7bc9b0b5",
+    "content-hash": "b34d371cd25ce5141e161d8ffb7d26c2",
     "packages": [
         {
             "name": "ixnode/php-checker",
-            "version": "0.1.5",
+            "version": "0.1.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-checker.git",
-                "reference": "f69676f17844923e485a1abb93105ff7d1bcfd14"
+                "reference": "182a5314541a27ed911895eb2db36c189c3a757c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-checker/zipball/f69676f17844923e485a1abb93105ff7d1bcfd14",
-                "reference": "f69676f17844923e485a1abb93105ff7d1bcfd14",
+                "url": "https://api.github.com/repos/ixnode/php-checker/zipball/182a5314541a27ed911895eb2db36c189c3a757c",
+                "reference": "182a5314541a27ed911895eb2db36c189c3a757c",
                 "shasum": ""
             },
             "require": {
-                "ixnode/php-exception": "^0.1.4",
+                "ixnode/php-exception": "^0.1.17",
                 "php": "^8.0"
             },
             "require-dev": {
@@ -60,22 +60,22 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-checker/issues",
-                "source": "https://github.com/ixnode/php-checker/tree/0.1.5"
+                "source": "https://github.com/ixnode/php-checker/tree/0.1.8"
             },
-            "time": "2023-01-10T01:37:49+00:00"
+            "time": "2023-01-22T17:12:26+00:00"
         },
         {
             "name": "ixnode/php-exception",
-            "version": "0.1.14",
+            "version": "0.1.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-exception.git",
-                "reference": "de2617365903dd2de31f60a4994477ad051cb9f6"
+                "reference": "49d311f4c209ba7516bc0fe25ab89f7c6cd2d786"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-exception/zipball/de2617365903dd2de31f60a4994477ad051cb9f6",
-                "reference": "de2617365903dd2de31f60a4994477ad051cb9f6",
+                "url": "https://api.github.com/repos/ixnode/php-exception/zipball/49d311f4c209ba7516bc0fe25ab89f7c6cd2d786",
+                "reference": "49d311f4c209ba7516bc0fe25ab89f7c6cd2d786",
                 "shasum": ""
             },
             "require": {
@@ -120,9 +120,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-exception/issues",
-                "source": "https://github.com/ixnode/php-exception/tree/0.1.14"
+                "source": "https://github.com/ixnode/php-exception/tree/0.1.17"
             },
-            "time": "2023-01-10T00:12:52+00:00"
+            "time": "2023-01-12T22:52:16+00:00"
         }
     ],
     "packages-dev": [

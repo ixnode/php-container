@@ -74,7 +74,7 @@ class Json implements Stringable
      */
     protected function convertJsonToObject(string $json): object
     {
-        $json = (new CheckerJson($json))->checkJson();
+        $json = (new CheckerJson($json))->check();
 
         $jsonObject = (object) json_decode($json, null, 512, JSON_THROW_ON_ERROR);
 
@@ -91,7 +91,7 @@ class Json implements Stringable
      */
     protected function convertJsonToArray(string $json): array
     {
-        $json = (new CheckerJson($json))->checkJson();
+        $json = (new CheckerJson($json))->check();
 
         $jsonObject = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 

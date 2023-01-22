@@ -24,8 +24,8 @@
   "require": {
     "php": "^8.0",
     "ext-curl": "*",
-    "ixnode/php-exception": "^0.1.14",
-    "ixnode/php-checker": "^0.1.5"
+    "ixnode/php-exception": "^0.1.17",
+    "ixnode/php-checker": "^0.1.8"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5",

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Ixnode\PhpContainer;
 
-use Ixnode\PhpChecker\Checker;
+use Ixnode\PhpChecker\CheckerArray;
 use Ixnode\PhpException\ArrayType\ArrayCountException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
@@ -31,7 +31,7 @@ use Stringable;
  */
 final class Csv implements Stringable
 {
-    /** @var array<int, array<string, bool|float|int|string|null>>|null $csv */
+    /** @var array<int, array<int|string, bool|float|int|string|null>>|null $csv */
     private ?array $csv = null;
 
     /** @var array<int, string>|null $header */
@@ -106,7 +106,7 @@ final class Csv implements Stringable
     /**
      * Returns the csv data of this container (as array<int, array<string, bool|float|int|string|null>>).
      *
-     * @return array<int, array<string, bool|float|int|string|null>>
+     * @return array<int, array<int|string, bool|float|int|string|null>>
      * @throws TypeInvalidException
      */
     public function getArray(): array
@@ -136,7 +136,7 @@ final class Csv implements Stringable
             $array = str_getcsv($line, $this->separator, $this->enclosure, $this->escape);
 
             if (is_null($this->header)) {
-                $this->header = (new Checker($array))->checkArrayString();
+                $this->header = array_values((new CheckerArray($array))->checkString());
                 continue;
             }
 
@@ -153,7 +153,7 @@ final class Csv implements Stringable
     /**
      * Converts a given array into an object.
      *
-     * @param array<int, array<string, bool|float|int|string|null>> $csv
+     * @param array<int, array<int|string, bool|float|int|string|null>> $csv
      * @return object
      * @throws TypeInvalidException
      * @throws FunctionJsonEncodeException
@@ -167,7 +167,7 @@ final class Csv implements Stringable
     /**
      * Converts given array to csv string.
      *
-     * @param array<int, array<string, bool|float|int|string|null>> $csv
+     * @param array<int, array<int|string, bool|float|int|string|null>> $csv
      * @return string
      * @throws TypeInvalidException
      */
@@ -190,7 +190,7 @@ final class Csv implements Stringable
      * Converts a given object into an array.
      *
      * @param object $json
-     * @return array<int, array<string, bool|float|int|string|null>>
+     * @return array<int, array<int|string, bool|float|int|string|null>>
      * @throws FunctionJsonEncodeException
      * @throws FunctionJsonEncodeException
      * @throws TypeInvalidException
@@ -202,7 +202,7 @@ final class Csv implements Stringable
         $array = [];
 
         foreach ((new Json($json))->getArray() as $value) {
-            $array[] = (new Checker($value))->checkArrayFlat();
+            $array[] = (new CheckerArray($value))->checkFlat();
         }
 
         return $array;
