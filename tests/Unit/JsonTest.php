@@ -57,7 +57,7 @@ final class JsonTest extends TestCase
     /**
      * Data provider (Json::getArray).
      *
-     * @return array<int, array{int, string|object|array<int|string, mixed>, array<int|string, mixed>|string}>
+     * @return array<int, array<int, mixed>>
      */
     public function dataProviderGetArray(): array
     {
@@ -121,7 +121,7 @@ final class JsonTest extends TestCase
     /**
      * Data provider (Json::addJson).
      *
-     * @return array<int, array{int, string|object|array<int|string, mixed>, string|object|array<int|string, mixed>, string|array<int, string>|null, array<int|string, mixed>|string}>
+     * @return array<int, array<int, mixed>>
      */
     public function dataProviderAddJson(): array
     {
@@ -166,6 +166,173 @@ final class JsonTest extends TestCase
             [++$number, '{"version": "1.0.0", "data": []}', '{"field1": "1", "field2": [1, 2, [3, 4, 5]]}', ['data', 'test', ], ["version" => "1.0.0", "data" => ["test" => ["field1" => "1", "field2" => [1, 2, [3, 4, 5, ], ], ], ], ], ],
 
             [++$number, '{"version": "1.0.0", "data": []}', '{"version": "1.0.0", "data": []}', null, ["version" => "1.0.0", "data" => [], ], ],
+        ];
+    }
+
+    /**
+     * Test wrapper (Json::getKey).
+     *
+     * @dataProvider dataProviderGetKey
+     *
+     * @test
+     * @testdox $number) Test Json::buildArray
+     * @param int $number
+     * @param string|object|array<int|string, mixed> $data
+     * @param string|array<int, string|array<int, string>> $path
+     * @param mixed $expected
+     * @param class-string<TypeInvalidException>|null $exception
+     * @throws Exception
+     */
+    public function wrapperGetKey(int $number, string|object|array $data, string|array $path, mixed $expected, ?string $exception = null): void
+    {
+        /* Arrange */
+        if (is_string($exception)) {
+            $this->expectException($exception);
+        }
+
+        /* Act */
+        $json = new Json($data);
+
+        /* Assert */
+        $this->assertIsNumeric($number); // To avoid phpmd warning.
+        $this->assertEquals($expected, $json->getKey($path));
+    }
+
+    /**
+     * Data provider (Json::getKey).
+     *
+     * @return array<int, array<int, mixed>>
+     */
+    public function dataProviderGetKey(): array
+    {
+        $number = 0;
+
+        return [
+            [++$number, '{"test": "123"}', 'test', '123', ],
+            [++$number, '{"test": "123"}', ['test'], '123', ],
+            [++$number, '[{"test": "123"}]', [0], ['test' => '123'], ],
+            [++$number, '[{"test": "123"}]', [[]], [['test' => '123']], ],
+            [++$number, '[{"test": "123"},{"test": "456"}]', [[]], [['test' => '123'], ['test' => '456']], ],
+            [++$number, '[{"test": "123"},{"test": "456"}]', [['test']], ['123', '456'], ],
+            [++$number, '{"foo": [{"test": "123"},{"test": "456"}]}', ['foo', ['test']], ['123', '456'], ],
+        ];
+    }
+
+    /**
+     * Test wrapper (Json::buildArray).
+     *
+     * @dataProvider dataProviderBuildArray
+     *
+     * @test
+     * @testdox $number) Test Json::buildArray
+     * @param int $number
+     * @param string|object|array<int|string, mixed> $data
+     * @param array<string, string|array<int, string|array<int, string|array<int, mixed>>>> $configuration
+     * @param array<int|string, mixed> $expected
+     * @param class-string<TypeInvalidException>|null $exception
+     * @throws Exception
+     */
+    public function wrapperBuildArray(int $number, string|object|array $data, array $configuration, array|string $expected, ?string $exception = null): void
+    {
+        /* Arrange */
+        if (is_string($exception)) {
+            $this->expectException($exception);
+        }
+
+        /* Act */
+        $json = new Json($data);
+
+        /* Assert */
+        $this->assertIsNumeric($number); // To avoid phpmd warning.
+        $this->assertSame($expected, $json->buildArray($configuration));
+    }
+
+    /**
+     * Data provider (Json::addJson).
+     *
+     * @return array<int, array<int, mixed>>
+     */
+    public function dataProviderBuildArray(): array
+    {
+        $number = 0;
+
+        return [
+            [++$number, '{}', [], [], ],
+            [++$number, '{"test": "123"}', [], [], ],
+            [++$number, '{"test": "123"}', ['test' => 'test'], ['test' => '123'], ],
+            [++$number, '{"test1": "123", "test2": "456"}', ['test' => 'test1'], ['test' => '123'], ],
+            [++$number, '{"test1": "123", "test2": "456"}', ['testNew1' => 'test1', 'testNew2' => 'test2'], ['testNew1' => '123', 'testNew2' => '456'], ],
+            [++$number, '{"test": ["123"]}', ['test' => 'test'], ['test' => ['123', ]], ],
+            [++$number, '{"test": ["123"]}', ['test' => ['test']], ['test' => ['123', ]], ],
+            [++$number, '[{"test": ["123"]}]', ['test' => [0]], ['test' => ['test' => ['123', ]]], ],
+            [
+                ++$number,
+                '[{"test": ["123"]}]',
+                ['area' => [0, 'test']],
+                ['area' => ['123', ]],
+            ],
+            [
+                ++$number,
+                '[{"test": "123"},{"test": "456"}]',
+                ['area' => [['test']]],
+                ['area' => ['123', '456']],
+            ],
+            [
+                ++$number,
+                '[{"key1": "111", "key2": "222"},{"key1": "333", "key2": "444"}]',
+                ['area' => [['key2']]],
+                ['area' => ['222', '444']],
+            ],
+            [
+                ++$number,
+                '[{"key1": "111", "key2": "222"},{"key1": "333", "key2": "444"}]',
+                [
+                    /* path [0] as area */
+                    'area' => 0,
+                ],
+                [
+                    'area' => ['key1' => '111', 'key2' => '222'],
+                ],
+            ],
+            [
+                ++$number,
+                '[{"key1": "111", "key2": "222"},{"key1": "333", "key2": "444"}]',
+                [
+                    /* path [][0] as area */
+                    'area' => [[], 0],
+                ],
+                [
+                    'area' => ['key1' => '111', 'key2' => '222'],
+                ],
+            ],
+            [
+                ++$number,
+                '[{"key1": "111", "key2": "222"},{"key1": "333", "key2": "444"}]',
+                [
+                    /* path []['key1'] as area1 */
+                    'area1' => [['key1']],
+                    /* path []['key2'] as area2 */
+                    'area2' => [['key2']],
+                ],
+                [
+                    'area1' => ['111', '333'],
+                    'area2' => ['222', '444'],
+                ],
+            ],
+            [
+                ++$number,
+                '[{"key1": 111, "key2": "222"},{"key1": 333, "key2": "444"}]',
+                [
+                    /* path []['key1'] as area1 */
+                    'area1' => [['key1']],
+                    /* path []['key2'] as area2 */
+                    'area2' => [['key2']],
+                ],
+                [
+                    'area1' => [111, 333],
+                    'area2' => ['222', '444'],
+                ],
+            ],
         ];
     }
 }

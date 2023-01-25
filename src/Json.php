@@ -19,6 +19,7 @@ use Ixnode\PhpChecker\Checker;
 use Ixnode\PhpChecker\CheckerClass;
 use Ixnode\PhpChecker\CheckerJson;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
@@ -40,10 +41,18 @@ class Json implements Stringable
     /** @var array<int|string, mixed> $json */
     protected array $json;
 
+    private const KEY_MODE_DIRECT = 'KEY_MODE_DIRECT';
+
+    private const KEY_MODE_CONFIGURABLE = 'KEY_MODE_CONFIGURABLE';
+
+    private string $keyMode = self::KEY_MODE_CONFIGURABLE;
+
     /**
      * File constructor.
      *
      * @param string|object|array<int|string, mixed> $json
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
@@ -252,16 +261,18 @@ class Json implements Stringable
     }
 
     /**
-     * Returns the given key as mixed representation.
+     * Returns the given key as mixed representation (direct - with array key syntax).
      *
-     * @param string|string[] $keys
+     * This method is faster than the getKeyConfigurable method, but not so configurable in its outputs.
+     *
+     * @param int|string|array<int, mixed> $keys
      * @return mixed
      * @throws ArrayKeyNotFoundException
      * @throws TypeInvalidException
      */
-    public function getKey(string|array $keys): mixed
+    private function getKeyDirect(int|string|array $keys): mixed
     {
-        if (is_string($keys)) {
+        if (is_int($keys) || is_string($keys)) {
             $keys = [$keys];
         }
 
@@ -272,8 +283,12 @@ class Json implements Stringable
                 throw new TypeInvalidException('array', gettype($data));
             }
 
+            if (!is_int($key) && !is_string($key)) {
+                throw new TypeInvalidException('string', 'array');
+            }
+
             if (!array_key_exists($key, $data)) {
-                throw new ArrayKeyNotFoundException($key);
+                throw new ArrayKeyNotFoundException(strval($key));
             }
 
             $data = $data[$key];
@@ -283,11 +298,127 @@ class Json implements Stringable
     }
 
     /**
+     * Returns the given key as mixed representation (with array key syntax).
+     *
+     * This method not so fast like the getKeyDirect method, but it is more configurable in its outputs.
+     *
+     * @param int|string|array<int, mixed> $keys
+     * @return mixed
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    private function getKeyConfigurable(int|string|array $keys): mixed
+    {
+        if (is_int($keys) || is_string($keys)) {
+            $keys = [$keys];
+        }
+
+        $data = $this->json;
+
+        /* No path given -> return data from root. */
+        if (count($keys) === 0) {
+            return $data;
+        }
+
+        /* Get first key and remove first key from keys. */
+        $key = array_shift($keys);
+
+        /* Array in path given (Transfer data as an array). */
+        if (is_array($key)) {
+            $collectedData = [];
+
+            foreach ($data as $value) {
+                if (!is_array($value)) {
+                    $collectedData[] = $value;
+                    continue;
+                }
+
+                $collectedData[] = (new Json($value))->getKey($key);
+            }
+
+            if (count($keys) <= 0) {
+                return $collectedData;
+            }
+
+            return (new Json($collectedData))->getKey($keys);
+        }
+
+        /* Invalid key type given. */
+        if (!is_int($key) && !is_string($key)) {
+            throw new TypeInvalidException('string', gettype($key));
+        }
+
+        /* Invalid path given. */
+        if (!array_key_exists($key, $data)) {
+            throw new ArrayKeyNotFoundException(strval($key));
+        }
+
+        /* Transfer data directly. */
+        $data = $data[$key];
+
+        /* The end of given path is reached -> Key path does not exist. */
+        if (!is_array($data) && count($keys) > 0) {
+            throw new CaseInvalidException('Invalid path given (Key does not exist).', ['Valid path']);
+        }
+
+        /* The end of given path is reached -> Return raw value */
+        if (!is_array($data) && count($keys) <= 0) {
+            return $data;
+        }
+
+        /* The input of Json object must be an array. */
+        if (!is_array($data)) {
+            throw new TypeInvalidException('array');
+        }
+
+        return (new Json($data))->getKey($keys);
+    }
+
+    /**
+     * Returns the given key as mixed representation.
+     *
+     * @param int|string|array<int, mixed> $keys
+     * @param string|null $keyMode
+     * @return mixed
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    public function getKey(int|string|array $keys, ?string $keyMode = null): mixed
+    {
+        $keyMode = $keyMode ?: $this->keyMode;
+
+        return match ($keyMode) {
+            self::KEY_MODE_CONFIGURABLE => $this->getKeyConfigurable($keys),
+            self::KEY_MODE_DIRECT => $this->getKeyDirect($keys),
+            default => throw new CaseInvalidException($keyMode, [self::KEY_MODE_CONFIGURABLE, self::KEY_MODE_DIRECT]),
+        };
+    }
+
+    /**
      * Returns the given key as boolean representation.
      *
      * @param string|string[] $keys
      * @return bool
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function isKey(string|array $keys): bool
@@ -307,6 +438,11 @@ class Json implements Stringable
      * @param string|string[] $keys
      * @return bool
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function isKeyBoolean(string|array $keys): bool
@@ -342,6 +478,11 @@ class Json implements Stringable
      * @param string|string[] $keys
      * @return string
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function getKeyString(string|array $keys): string
@@ -361,6 +502,11 @@ class Json implements Stringable
      * @param string|string[] $keys
      * @return string
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function getKeyStringToLower(string|array $keys): string
@@ -374,6 +520,11 @@ class Json implements Stringable
      * @param string|string[] $keys
      * @return string
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function getKeyStringUcFirst(string|array $keys): string
@@ -402,6 +553,11 @@ class Json implements Stringable
      * @param string|string[] $keys
      * @return int
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function getKeyInteger(string|array $keys): int
@@ -421,6 +577,11 @@ class Json implements Stringable
      * @param string|string[] $keys
      * @return array<int|string, mixed>
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function getKeyArray(string|array $keys): array
@@ -440,6 +601,11 @@ class Json implements Stringable
      * @param string|string[] $keys
      * @return array<int, string>
      * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
      * @throws TypeInvalidException
      */
     public function getKeyArrayString(string|array $keys): array
@@ -458,11 +624,12 @@ class Json implements Stringable
      *
      * @param string|string[] $keys
      * @return Json
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
-     * @throws ArrayKeyNotFoundException
      * @throws TypeInvalidException
      */
     public function getKeyJson(string|array $keys): Json
@@ -477,9 +644,11 @@ class Json implements Stringable
      *
      * @param string|object|array<int|string, mixed> $json
      * @return self
-     * @throws TypeInvalidException
-     * @throws JsonException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
     public function setJson(string|object|array $json): self
     {
@@ -597,5 +766,29 @@ class Json implements Stringable
             is_array($json) => $json,
             is_object($json) => $this->convertObjectToArray($json),
         };
+    }
+
+    /**
+     * Builds an array with given configuration.
+     *
+     * @param array<string, string|array<int, string|array<int, string|array<int, mixed>>>> $configuration
+     * @return array<string, mixed>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function buildArray(array $configuration): array
+    {
+        $return = [];
+
+        foreach ($configuration as $key => $path) {
+            $return[$key] = $this->getKey($path);
+        }
+
+        return $return;
     }
 }

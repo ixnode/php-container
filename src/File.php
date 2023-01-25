@@ -14,10 +14,14 @@ declare(strict_types=1);
 namespace Ixnode\PhpContainer;
 
 use Composer\Autoload\ClassLoader;
+use Exception;
 use Ixnode\PhpContainer\Base\BaseContainer;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpSizeByte\SizeByte;
+use JsonException;
 use ReflectionClass;
 use Stringable;
 
@@ -95,6 +99,20 @@ class File extends BaseContainer implements Stringable
         }
 
         return $fileSize;
+    }
+
+    /**
+     * Returns the filesize as human-readable string.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     * @throws Exception
+     */
+    public function getFileSizeHuman(): string
+    {
+        $fileSize = $this->getFileSize();
+
+        return (new SizeByte($fileSize))->getHumanReadable();
     }
 
     /**
@@ -272,5 +290,22 @@ class File extends BaseContainer implements Stringable
         }
 
         return $content;
+    }
+
+    /**
+     * Returns the file content as JSON object.
+     *
+     * @return Json
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
+     */
+    public function getJson(): Json
+    {
+        $contentAsText = $this->getContentAsText();
+
+        return new Json($contentAsText);
     }
 }
