@@ -15,6 +15,7 @@ namespace Ixnode\PhpContainer;
 
 use DateTimeImmutable;
 use Exception;
+use http\Exception\UnexpectedValueException;
 use Ixnode\PhpChecker\Checker;
 use Ixnode\PhpChecker\CheckerClass;
 use Ixnode\PhpChecker\CheckerJson;
@@ -790,5 +791,56 @@ class Json implements Stringable
         }
 
         return $return;
+    }
+
+    /**
+     * Builds an array with given configuration as combined.
+     *
+     * @param array<string, string|array<int, string|array<int, string|array<int, mixed>>>> $configuration
+     * @return array<int, array<string, mixed>>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function buildArrayCombined(array $configuration): array
+    {
+        $array = $this->buildArray($configuration);
+
+        $count = null;
+        foreach ($array as $value) {
+            if (!is_array($value)) {
+                throw new TypeInvalidException('array', gettype($value));
+            }
+
+            if (is_null($count)) {
+                $count = count($value);
+                continue;
+            }
+
+            if (count($value) !== $count) {
+                throw new UnexpectedValueException(sprintf('The count value does not match with the expected (%d -> %d)', count($value), $count));
+            }
+        }
+
+        $arrayCombined = [];
+        foreach ($array as $key => $values) {
+            if (!is_array($values)) {
+                throw new TypeInvalidException('array', gettype($values));
+            }
+
+            foreach ($values as $index => $value) {
+                if (!array_key_exists($index, $arrayCombined)) {
+                    $arrayCombined[$index] = null;
+                }
+
+                $arrayCombined[$index][$key] = $value;
+            }
+        }
+
+        return $arrayCombined;
     }
 }

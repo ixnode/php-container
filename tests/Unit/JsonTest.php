@@ -175,7 +175,7 @@ final class JsonTest extends TestCase
      * @dataProvider dataProviderGetKey
      *
      * @test
-     * @testdox $number) Test Json::buildArray
+     * @testdox $number) Test Json::getKey
      * @param int $number
      * @param string|object|array<int|string, mixed> $data
      * @param string|array<int, string|array<int, string>> $path
@@ -248,7 +248,7 @@ final class JsonTest extends TestCase
     }
 
     /**
-     * Data provider (Json::addJson).
+     * Data provider (Json::buildArray).
      *
      * @return array<int, array<int, mixed>>
      */
@@ -331,6 +331,68 @@ final class JsonTest extends TestCase
                 [
                     'area1' => [111, 333],
                     'area2' => ['222', '444'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Test wrapper (Json::buildArrayCombined).
+     *
+     * @dataProvider dataProviderBuildArrayCombined
+     *
+     * @test
+     * @testdox $number) Test Json::buildArrayCombined
+     * @param int $number
+     * @param string|object|array<int|string, mixed> $data
+     * @param array<string, string|array<int, string|array<int, string|array<int, mixed>>>> $configuration
+     * @param array<int|string, mixed> $expected
+     * @param class-string<TypeInvalidException>|null $exception
+     * @throws Exception
+     */
+    public function wrapperBuildArrayCombined(int $number, string|object|array $data, array $configuration, array|string $expected, ?string $exception = null): void
+    {
+        /* Arrange */
+        if (is_string($exception)) {
+            $this->expectException($exception);
+        }
+
+        /* Act */
+        $json = new Json($data);
+
+        /* Assert */
+        $this->assertIsNumeric($number); // To avoid phpmd warning.
+        $this->assertSame($expected, $json->buildArrayCombined($configuration));
+    }
+
+    /**
+     * Data provider (Json::buildArrayCombined).
+     *
+     * @return array<int, array<int, mixed>>
+     */
+    public function dataProviderBuildArrayCombined(): array
+    {
+        $number = 0;
+
+        return [
+            [
+                ++$number,
+                '[{"key1": 111, "key2": "222"},{"key1": 333, "key2": "444"}]',
+                [
+                    /* path []['key1'] as area1 */
+                    'area1' => [['key1']],
+                    /* path []['key2'] as area2 */
+                    'area2' => [['key2']],
+                ],
+                [
+                    [
+                        'area1' => 111,
+                        'area2' => '222'
+                    ],
+                    [
+                        'area1' => 333,
+                        'area2' => '444'
+                    ],
                 ],
             ],
         ];
