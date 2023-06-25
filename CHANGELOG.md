@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.8] - 2023-06-25
+
+* Composer update
+* Fix package description
+
 ### [0.1.7] - 2023-01-26
 
 * Add Json::buildArrayCombined method
