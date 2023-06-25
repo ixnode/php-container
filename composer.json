@@ -1,6 +1,6 @@
 {
   "name": "ixnode/php-container",
-  "description": "PHP Size Byte",
+  "description": "PHP Container - A collection of various PHP container classes like JSON, File, etc.",
   "type": "library",
   "license": "MIT",
   "keywords": ["php", "container", "json", "file", "data"],
@@ -24,7 +24,7 @@
   "require": {
     "php": "^8.0",
     "ext-curl": "*",
-    "ixnode/php-exception": "^0.1.17",
+    "ixnode/php-exception": "^0.1.19",
     "ixnode/php-checker": "^0.1.8",
     "ixnode/php-size-byte": "^0.1.2"
   },
