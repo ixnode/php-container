@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the ixno/php-container project.
+ * This file is part of the ixnode/php-container project.
  *
  * (c) Björn Hempel <https://www.hempel.li/>
  *
@@ -34,6 +34,12 @@ use Stringable;
  */
 class File extends BaseContainer implements Stringable
 {
+    private const PATH_NUMBERED = '%s.%05d.%s';
+
+    private const PATH_WITH_TEMP = '%s/%s/%s';
+
+    public const PATH_TEMP = 'tmp';
+
     private const FORMAT_DATE_DEFAULT = 'l, F d, Y - H:i:s';
 
     private ?string $directoryRoot = null;
@@ -82,6 +88,71 @@ class File extends BaseContainer implements Stringable
         $this->path = $path;
 
         return $this;
+    }
+
+    /**
+     * Returns the numbered path of this container. Useful if you plan to split that file.
+     *
+     * @param int $number
+     * @return string
+     * @throws TypeInvalidException
+     */
+    public function getPathNumbered(int $number): string
+    {
+        $position = strrpos($this->path, '.');
+
+        if ($position === false) {
+            throw new TypeInvalidException('int', 'bool');
+        }
+
+        $pathWithoutExtension = substr($this->path, 0, $position);
+
+        $extension = substr($this->path, $position + 1);
+
+        return sprintf(self::PATH_NUMBERED, $pathWithoutExtension, $number, $extension);
+    }
+
+    /**
+     * Returns the numbered path of this container. Useful if you plan to split that file.
+     *
+     * @param int $number
+     * @param string $directoryTmp
+     * @return string
+     * @throws TypeInvalidException
+     */
+    public function getPathNumberedWithTmp(int $number, string $directoryTmp = self::PATH_TEMP): string
+    {
+        $pathNumbered = $this->getPathNumbered($number);
+
+        $position = strrpos($pathNumbered, '/');
+
+        if ($position === false) {
+            throw new TypeInvalidException('int', 'bool');
+        }
+
+        $pathBefore = substr($pathNumbered, 0, $position);
+
+        $pathAfter = substr($pathNumbered, $position + 1);
+
+        return sprintf(self::PATH_WITH_TEMP, $pathBefore, $directoryTmp, $pathAfter);
+    }
+
+    /**
+     * Returns the line numbers of given file.
+     *
+     * @return int
+     * @throws FileNotFoundException
+     * @throws TypeInvalidException
+     */
+    public function getLineNumbers(): int
+    {
+        $file = file($this->getPathReal());
+
+        if ($file === false) {
+            throw new TypeInvalidException('array', 'bool');
+        }
+
+        return count($file);
     }
 
     /**
@@ -307,5 +378,33 @@ class File extends BaseContainer implements Stringable
         $contentAsText = $this->getContentAsText();
 
         return new Json($contentAsText);
+    }
+
+    /**
+     * Returns the encoding of a file.
+     *
+     * @return string|false
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    public function getEncoding(): string|false
+    {
+        $content = $this->getContentAsText();
+
+        $bom = substr($content, 0, 3);
+
+        /* BOM UTF-8 encoding detected. */
+        if ($bom == "\xEF\xBB\xBF") {
+            return 'UTF-8';
+        }
+
+        #$encoding = mb_detect_encoding($content, [Encoding::ASCII, Encoding::UTF_8, Encoding::UTF_16_BE, Encoding::UTF_16_LE, Encoding::UTF_32_BE, Encoding::UTF_32_LE], true);
+        $encoding = mb_detect_encoding($content, [Encoding::ASCII, Encoding::UTF_8, Encoding::ISO_8859_1], true);
+
+        if (is_string($encoding) && !empty($encoding)) {
+            return $encoding;
+        }
+
+        return false;
     }
 }
