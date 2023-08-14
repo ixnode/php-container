@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.10] - 2023-08-14
+
+* Add Json::getKeyFloat() method
+
 ### [0.1.9] - 2023-06-28
 
 * Add additional methods to File class
