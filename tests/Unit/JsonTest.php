@@ -15,7 +15,13 @@ namespace Ixnode\PhpContainer\Tests\Unit;
 
 use Exception;
 use Ixnode\PhpContainer\Json;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use JsonException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2022-12-30)
  * @since 0.1.0 (2022-12-30) First version.
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 final class JsonTest extends TestCase
 {
@@ -87,6 +94,8 @@ final class JsonTest extends TestCase
             [++$number, '{"abc": "123"]', TypeInvalidException::class, ],
         ];
     }
+
+
 
     /**
      * Test wrapper (Json::addJson).
@@ -169,6 +178,8 @@ final class JsonTest extends TestCase
         ];
     }
 
+
+
     /**
      * Test wrapper (Json::getKey).
      *
@@ -217,6 +228,70 @@ final class JsonTest extends TestCase
             [++$number, '{"foo": [{"test": "123"},{"test": "456"}]}', ['foo', ['test']], ['123', '456'], ],
         ];
     }
+
+
+
+    /**
+     * Test wrapper (Json::getKeyX).
+     *
+     * @dataProvider dataProviderGetKeyType
+     *
+     * @test
+     * @testdox $number) Test Json::getKeyX
+     * @param int $number
+     * @param string $method
+     * @param string|object|array<int|string, mixed> $data
+     * @param string|array<int, string|array<int, string>> $path
+     * @param mixed $expected
+     * @param class-string<TypeInvalidException>|null $exception
+     * @throws TypeInvalidException
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     */
+    public function wrapperGetKeyType(int $number, string $method, string|object|array $data, string|array $path, mixed $expected, ?string $exception = null): void
+    {
+        /* Arrange */
+        if (is_string($exception)) {
+            $this->expectException($exception);
+        }
+
+        /* Act */
+        $json = new Json($data);
+        $callback = [$json, $method];
+
+        /* Assert */
+        $this->assertIsNumeric($number); // To avoid phpmd warning.
+        $this->assertContains($method, get_class_methods(Json::class));
+        $this->assertIsCallable($callback);
+        $this->assertEquals($expected, $json->{$method}($path));
+    }
+
+    /**
+     * Data provider (Json::getKeyFloat).
+     *
+     * @return array<int, array<int, mixed>>
+     */
+    public function dataProviderGetKeyType(): array
+    {
+        $number = 0;
+
+        return [
+            /* @link Json::getKeyString() */
+            [++$number, 'getKeyString', '{"test": "0.12"}', 'test', '0.12', ],
+
+            /* @link Json::getKeyInteger() */
+            [++$number, 'getKeyInteger', '{"test": 12}', 'test', 12, ],
+
+            /* @link Json::getKeyFloat() */
+            [++$number, 'getKeyFloat', '{"test": 0.12}', 'test', .12, ],
+        ];
+    }
+
+
 
     /**
      * Test wrapper (Json::buildArray).
@@ -335,6 +410,8 @@ final class JsonTest extends TestCase
             ],
         ];
     }
+
+
 
     /**
      * Test wrapper (Json::buildArrayCombined).

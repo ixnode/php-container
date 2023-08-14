@@ -551,7 +551,7 @@ class Json implements Stringable
     /**
      * Returns the given key as integer representation.
      *
-     * @param string|string[] $keys
+     * @param int|string|array<int, mixed> $keys
      * @return int
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -561,12 +561,36 @@ class Json implements Stringable
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getKeyInteger(string|array $keys): int
+    public function getKeyInteger(int|string|array $keys): int
     {
         $value = $this->getKey($keys);
 
         if (!is_int($value)) {
             throw new TypeInvalidException('string', gettype($value));
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns the given key as float representation.
+     *
+     * @param int|string|array<int, mixed> $keys
+     * @return float
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getKeyFloat(int|string|array $keys): float
+    {
+        $value = $this->getKey($keys);
+
+        if (!is_float($value)) {
+            throw new TypeInvalidException('float', gettype($value));
         }
 
         return $value;
