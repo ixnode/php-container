@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.11] - 2023-11-18
+
+* Add float to Json::addValue
+
 ### [0.1.10] - 2023-08-14
 
 * Add Json::getKeyFloat() method
