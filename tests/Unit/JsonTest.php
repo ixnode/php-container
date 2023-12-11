@@ -297,9 +297,69 @@ final class JsonTest extends TestCase
             [++$number, '[{"test": "123"},{"test": "456"}]', [[]], [['test' => '123'], ['test' => '456']], ],
             [++$number, '[{"test": "123"},{"test": "456"}]', [['test']], ['123', '456'], ],
             [++$number, '{"foo": [{"test": "123"},{"test": "456"}]}', ['foo', ['test']], ['123', '456'], ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": "1"}},{"test": {"deeper": "2"}}]}',
+                ['foo', ['test']],
+                [['deeper' => 1], ['deeper' => 2]],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": "1"}},{"test": {"deeper": "2"}}]}',
+                ['foo', ['test', 'deeper']],
+                [1, 2],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": {"bla": 4}}},{"test": {"deeper": {"bla": 5}}}]}',
+                ['foo', ['test', 'deeper']],
+                [['bla' => 4], ['bla' => 5]],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": {"bla": 4}}},{"test": {"deeper": {"bla": 5}}}]}',
+                ['foo', ['test', 'deeper', 'bla']],
+                [4, 5],
+            ],
 
             /* Missing keys. */
             [++$number, '{"foo": [{"test": "123"},{"test2": "456"}]}', ['foo', ['test']], ['123'], ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": "1"}},{"test2": {"deeper": "2"}}]}',
+                ['foo', ['test']],
+                [['deeper' => 1]],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": "1"}},{"test": {"deeper2": "2"}}]}',
+                ['foo', ['test', 'deeper']],
+                [1],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper2": "1"}},{"test": {"deeper": "2"}}]}',
+                ['foo', ['test', 'deeper']],
+                [2],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": {"bla": 4}}},{"test": {"deeper": {"bla2": 5}}}]}',
+                ['foo', ['test', 'deeper', 'bla']],
+                [4],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": {"bla2": 4}}},{"test": {"deeper": {"bla": 5}}}]}',
+                ['foo', ['test', 'deeper', 'bla']],
+                [5],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"test": {"deeper": {"bla1": 4}}},{"test": {"deeper": {"bla2": 5}}}]}',
+                ['foo', ['test', 'deeper', 'bla']],
+                [],
+            ],
         ];
     }
 

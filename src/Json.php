@@ -476,7 +476,7 @@ class Json implements Stringable
                 return $collectedData;
             }
 
-            return (new Json($collectedData))->getKey($keys);
+            return (new Json($collectedData))->setIgnoreMissingKey()->getKey($keys);
         }
 
         /* Invalid key type given. */
@@ -496,12 +496,12 @@ class Json implements Stringable
         /* Transfer data directly. */
         $data = $data[$key];
 
-        /* The end of given path is reached -> Key path does not exist. */
+        /* The end of the given path is reached -> The key path does not exist. */
         if (!is_array($data) && count($keys) > 0) {
             throw new CaseInvalidException('Invalid path given (Key does not exist).', ['Valid path']);
         }
 
-        /* The end of given path is reached -> Return raw value */
+        /* The end of the given path is reached -> Return raw value */
         if (!is_array($data) && count($keys) <= 0) {
             return $data;
         }
@@ -511,7 +511,13 @@ class Json implements Stringable
             throw new TypeInvalidException('array');
         }
 
-        return (new Json($data))->getKey($keys);
+        $json = (new Json($data));
+
+        if ($this->ignoreMissingKey) {
+            $json->setIgnoreMissingKey();
+        }
+
+        return $json->getKey($keys);
     }
 
     /**
