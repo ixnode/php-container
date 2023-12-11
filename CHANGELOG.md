@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.12] - 2023-12-11
+
+* Add array key syntax to hasKey
+* Add hasKey tests
+
 ### [0.1.11] - 2023-11-18
 
 * Add float to Json::addValue
