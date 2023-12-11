@@ -321,6 +321,25 @@ final class JsonTest extends TestCase
                 ['foo', ['test', 'deeper', 'bla']],
                 [4, 5],
             ],
+            /* With id values. */
+            [
+                ++$number,
+                '{"foo": [{"id": "89", "value": "value-89", "test": {"deeper": {"bla": 4}}},{"id": "90", "value": "value-90", "test": {"deeper": {"bla": 5}}}]}',
+                ['foo', ['test', 'deeper', 'bla']],
+                [4, 5],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"id": "89", "value": "value-89", "test": {"deeper": {"bla": 4}}},{"id": "90", "value": "value-90", "test": {"deeper": {"bla": 5}}}]}',
+                ['foo', ['key=id', 'test', 'deeper', 'bla']],
+                ['89' => 4, '90' => 5],
+            ],
+            [
+                ++$number,
+                '{"foo": [{"id": "89", "value": "value-89", "test": {"deeper": {"bla": 4}}},{"id": "90", "value": "value-90", "test": {"deeper": {"bla": 5}}}]}',
+                ['foo', ['key=value', 'test', 'deeper', 'bla']],
+                ['value-89' => 4, 'value-90' => 5],
+            ],
 
             /* Missing keys. */
             [++$number, '{"foo": [{"test": "123"},{"test2": "456"}]}', ['foo', ['test']], ['123'], ],

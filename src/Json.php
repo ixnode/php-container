@@ -36,6 +36,7 @@ use Stringable;
  * @since 0.1.0 (2022-12-30) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  */
 class Json implements Stringable
 {
@@ -45,6 +46,10 @@ class Json implements Stringable
     private const KEY_MODE_DIRECT = 'KEY_MODE_DIRECT';
 
     private const KEY_MODE_CONFIGURABLE = 'KEY_MODE_CONFIGURABLE';
+
+    private const KEY_FIELD_NAME = 'key';
+
+    private const SIGN_EQUAL = '=';
 
     private string $keyMode = self::KEY_MODE_CONFIGURABLE;
 
@@ -421,6 +426,39 @@ class Json implements Stringable
     }
 
     /**
+     * Read config from the given key path.
+     *
+     * @param array<int, mixed> $keys
+     * @return string|null
+     */
+    private function readKeyField(array &$keys): string|null
+    {
+        if (count($keys) <= 0) {
+            return null;
+        }
+
+        $configKey = $keys[0];
+
+        if (!is_string($configKey)) {
+            return null;
+        }
+
+        if (!str_contains($configKey, self::SIGN_EQUAL)) {
+            return null;
+        }
+
+        $split = explode(self::SIGN_EQUAL, $configKey);
+
+        if ($split[0] !== self::KEY_FIELD_NAME) {
+            return null;
+        }
+
+        array_shift($keys);
+
+        return $split[1];
+    }
+
+    /**
      * Returns the given key as mixed representation (with array key syntax).
      *
      * This method is not so fast like the getKeyDirect method, but it is more configurable in its outputs.
@@ -457,6 +495,8 @@ class Json implements Stringable
         if (is_array($key)) {
             $collectedData = [];
 
+            $keyField = $this->readKeyField($key);
+
             foreach ($data as $value) {
                 if (!is_array($value)) {
                     $collectedData[] = $value;
@@ -469,7 +509,15 @@ class Json implements Stringable
                     continue;
                 }
 
-                $collectedData[] = $keyData;
+                $idValue = match (true) {
+                    is_null($keyField) || !array_key_exists($keyField, $value) => null,
+                    default => $value[$keyField],
+                };
+
+                match (true) {
+                    is_null($idValue) => $collectedData[] = $keyData,
+                    default => $collectedData[$idValue] = $keyData,
+                };
             }
 
             if (count($keys) <= 0) {
