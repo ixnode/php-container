@@ -181,6 +181,77 @@ final class JsonTest extends TestCase
 
 
     /**
+     * Test wrapper (Json::hasKey).
+     *
+     * @dataProvider dataProviderHasKey
+     *
+     * @test
+     * @testdox $number) Test Json::hasKey
+     * @param int $number
+     * @param string|object|array<int|string, mixed> $data
+     * @param string|array<int, string|array<int, string>> $path
+     * @param bool $expected
+     * @param class-string<TypeInvalidException>|null $exception
+     * @throws Exception
+     */
+    public function wrapperHasKey(int $number, string|object|array $data, string|array $path, bool $expected, ?string $exception = null): void
+    {
+        /* Arrange */
+        if (is_string($exception)) {
+            $this->expectException($exception);
+        }
+
+        /* Act */
+        $json = new Json($data);
+
+        /* Assert */
+        $this->assertIsNumeric($number); // To avoid phpmd warning.
+        $this->assertEquals($expected, $json->hasKey($path));
+    }
+
+    /**
+     * Data provider (Json::hasKey).
+     *
+     * @return array<int, array<int, mixed>>
+     */
+    public function dataProviderHasKey(): array
+    {
+        $number = 0;
+
+        return [
+            /* Available keys. */
+            [++$number, '{"test": "123"}', 'test', true, ],
+            [++$number, '{"test": "123"}', ['test'], true, ],
+            [++$number, '{"foo": {"test": "123"}}', ['foo'], true, ],
+            [++$number, '{"foo": {"test": "123"}}', ['foo', 'test'], true, ],
+
+            /* Missing keys. */
+            [++$number, '{"test2": "123"}', 'test', false, ],
+            [++$number, '{"test2": "123"}', ['test'], false, ],
+            [++$number, '{"foo": {"test2": "123"}}', ['foo', 'test'], false, ],
+
+            /* Available keys with array syntax. */
+            [++$number, '[]', [], true, ],
+            [++$number, '[{"test": "123"}]', [], true, ],
+            [++$number, '[{"test": "123"}]', [[]], true, ],
+            [++$number, '[{"test": "123"}]', [['test']], true, ],
+            [++$number, '[{"test": "123"}, {"test": "123"}]', [['test']], true, ],
+            /* At least one exists. */
+            [++$number, '[{"test": "123"}, {"test2": "123"}]', [['test']], true, ],
+            [++$number, '[{"test2": "123"}, {"test": "123"}]', [['test']], true, ],
+            /* Multiple */
+            [++$number, '{"foo": [{"test": {"deeper": 123}}, {"test2": "123"}]}', ['foo', ['test', 'deeper']], true, ],
+
+            /* Missing keys with array syntax. */
+            [++$number, '[{"test2": "123"}]', [['test']], false, ],
+            [++$number, '[{"test2": "123"}, {"test2": "123"}]', [['test']], false, ],
+            [++$number, '{"foo": [{"test": {"deeper2": 123}}, {"test2": "123"}]}', ['foo', ['test', 'deeper']], false, ],
+        ];
+    }
+
+
+
+    /**
      * Test wrapper (Json::getKey).
      *
      * @dataProvider dataProviderGetKey
@@ -226,6 +297,9 @@ final class JsonTest extends TestCase
             [++$number, '[{"test": "123"},{"test": "456"}]', [[]], [['test' => '123'], ['test' => '456']], ],
             [++$number, '[{"test": "123"},{"test": "456"}]', [['test']], ['123', '456'], ],
             [++$number, '{"foo": [{"test": "123"},{"test": "456"}]}', ['foo', ['test']], ['123', '456'], ],
+
+            /* Missing keys. */
+            [++$number, '{"foo": [{"test": "123"},{"test2": "456"}]}', ['foo', ['test']], ['123'], ],
         ];
     }
 

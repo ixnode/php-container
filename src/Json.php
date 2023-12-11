@@ -15,7 +15,6 @@ namespace Ixnode\PhpContainer;
 
 use DateTimeImmutable;
 use Exception;
-use http\Exception\UnexpectedValueException;
 use Ixnode\PhpChecker\Checker;
 use Ixnode\PhpChecker\CheckerClass;
 use Ixnode\PhpChecker\CheckerJson;
@@ -26,6 +25,7 @@ use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
+use LogicException;
 use Stringable;
 
 /**
@@ -47,6 +47,8 @@ class Json implements Stringable
     private const KEY_MODE_CONFIGURABLE = 'KEY_MODE_CONFIGURABLE';
 
     private string $keyMode = self::KEY_MODE_CONFIGURABLE;
+
+    private bool $ignoreMissingKey = false;
 
     /**
      * File constructor.
@@ -72,6 +74,16 @@ class Json implements Stringable
     public function __toString(): string
     {
         return $this->getJsonStringFormatted();
+    }
+
+    /**
+     * @return self
+     */
+    public function setIgnoreMissingKey(): self
+    {
+        $this->ignoreMissingKey = true;
+
+        return $this;
     }
 
     /**
@@ -235,12 +247,38 @@ class Json implements Stringable
     }
 
     /**
-     * @param string|string[] $keys
+     * Return if the given key exists.
+     *
+     * @param int|string|array<int, mixed> $keys
+     * @param string|null $keyMode
+     * @return bool
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function hasKey(int|string|array $keys, ?string $keyMode = null): bool
+    {
+        $keyMode = $keyMode ?: $this->keyMode;
+
+        return match ($keyMode) {
+            self::KEY_MODE_CONFIGURABLE => $this->hasKeyConfigurable($keys),
+            self::KEY_MODE_DIRECT => $this->hasKeyDirect($keys),
+            default => throw new CaseInvalidException($keyMode, [self::KEY_MODE_CONFIGURABLE, self::KEY_MODE_DIRECT]),
+        };
+    }
+
+    /**
+     * Return if the given key exists (direct, without array key syntax).
+     *
+     * @param int|string|array<int, mixed> $keys
      * @return bool
      */
-    public function hasKey(string|array $keys): bool
+    private function hasKeyDirect(int|string|array $keys): bool
     {
-        if (is_string($keys)) {
+        if (is_int($keys) || is_string($keys)) {
             $keys = [$keys];
         }
 
@@ -248,6 +286,10 @@ class Json implements Stringable
 
         foreach ($keys as $key) {
             if (!is_array($data)) {
+                return false;
+            }
+
+            if (!is_int($key) && !is_string($key)) {
                 return false;
             }
 
@@ -259,6 +301,86 @@ class Json implements Stringable
         }
 
         return true;
+    }
+
+    /**
+     * Returns if the given key exists (with array key syntax).
+     *
+     * This method is not so fast like the hasKeyDirect method, but it is more configurable in its outputs.
+     *
+     * @param int|string|array<int, mixed> $keys
+     * @return bool
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    private function hasKeyConfigurable(int|string|array $keys): bool
+    {
+        if (is_int($keys) || is_string($keys)) {
+            $keys = [$keys];
+        }
+
+        $data = $this->json;
+
+        /* No path given -> always true. */
+        if (count($keys) === 0) {
+            return true;
+        }
+
+        /* Get first key and remove first key from keys. */
+        $key = array_shift($keys);
+
+        /* Array in path given (Transfer data as an array). */
+        if (is_array($key)) {
+            foreach ($data as $value) {
+                if (!is_array($value)) {
+                    return true;
+                }
+
+                $hasKey = (new Json($value))->setIgnoreMissingKey()->hasKey($key);
+
+                if ($hasKey) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /* Invalid key type given. */
+        if (!is_int($key) && !is_string($key)) {
+            throw new TypeInvalidException('string', gettype($key));
+        }
+
+        /* Invalid path given. */
+        if (!array_key_exists($key, $data)) {
+            return false;
+        }
+
+        /* Transfer data directly. */
+        $data = $data[$key];
+
+        /* The end of the given path is reached -> The key path does not exist. */
+        if (!is_array($data) && count($keys) > 0) {
+            return false;
+        }
+
+        /* The end of the given path is reached -> Return true (the key path was found). */
+        if (!is_array($data) && count($keys) <= 0) {
+            return true;
+        }
+
+        /* The input of Json object must be an array. */
+        if (!is_array($data)) {
+            throw new TypeInvalidException('array');
+        }
+
+        return (new Json($data))->hasKey($keys);
     }
 
     /**
@@ -301,7 +423,7 @@ class Json implements Stringable
     /**
      * Returns the given key as mixed representation (with array key syntax).
      *
-     * This method not so fast like the getKeyDirect method, but it is more configurable in its outputs.
+     * This method is not so fast like the getKeyDirect method, but it is more configurable in its outputs.
      *
      * @param int|string|array<int, mixed> $keys
      * @return mixed
@@ -341,7 +463,13 @@ class Json implements Stringable
                     continue;
                 }
 
-                $collectedData[] = (new Json($value))->getKey($key);
+                $keyData = (new Json($value))->setIgnoreMissingKey()->getKey($key);
+
+                if (is_null($keyData)) {
+                    continue;
+                }
+
+                $collectedData[] = $keyData;
             }
 
             if (count($keys) <= 0) {
@@ -358,6 +486,10 @@ class Json implements Stringable
 
         /* Invalid path given. */
         if (!array_key_exists($key, $data)) {
+            if ($this->ignoreMissingKey) {
+                return null;
+            }
+
             throw new ArrayKeyNotFoundException(strval($key));
         }
 
@@ -703,21 +835,21 @@ class Json implements Stringable
     public function addJson(string|object|array $json, string|array|null $path = null): self
     {
         $addJson = $this->getArrayFromJson($json);
-        $customerTypes = $this->getCustomerTypesFromPath($path);
+        $keys = $this->normalizePath($path);
 
         $jsonSource = $this->getArray();
         $jsonAnchor = &$jsonSource;
 
-        foreach ($customerTypes as $customerType) {
+        foreach ($keys as $key) {
             if (!is_array($jsonAnchor)) {
                 throw new TypeInvalidException('array');
             }
 
-            if (!array_key_exists($customerType, $jsonAnchor)) {
-                $jsonAnchor[$customerType] = [];
+            if (!array_key_exists($key, $jsonAnchor)) {
+                $jsonAnchor[$key] = [];
             }
 
-            $jsonAnchor = &$jsonAnchor[$customerType];
+            $jsonAnchor = &$jsonAnchor[$key];
         }
 
         $jsonAnchor = array_merge($jsonAnchor, $addJson);
@@ -739,21 +871,21 @@ class Json implements Stringable
      */
     public function addValue(string|array|null $path, string|int|float|array|null $value): self
     {
-        $customerTypes = $this->getCustomerTypesFromPath($path);
+        $keys = $this->normalizePath($path);
 
         $jsonSource = $this->getArray();
         $jsonAnchor = &$jsonSource;
 
-        foreach ($customerTypes as $customerType) {
+        foreach ($keys as $key) {
             if (!is_array($jsonAnchor)) {
                 throw new TypeInvalidException('array');
             }
 
-            if (!array_key_exists($customerType, $jsonAnchor)) {
-                $jsonAnchor[$customerType] = [];
+            if (!array_key_exists($key, $jsonAnchor)) {
+                $jsonAnchor[$key] = [];
             }
 
-            $jsonAnchor = &$jsonAnchor[$customerType];
+            $jsonAnchor = &$jsonAnchor[$key];
         }
 
         $jsonAnchor = $value;
@@ -764,10 +896,12 @@ class Json implements Stringable
     }
 
     /**
+     * Translate and normalize the given path.
+     *
      * @param string|array<int, string>|null $path
      * @return array<int, string>
      */
-    private function getCustomerTypesFromPath(string|array|null $path): array
+    private function normalizePath(string|array|null $path): array
     {
         return match (true) {
             is_null($path), $path === '' => [],
@@ -846,7 +980,7 @@ class Json implements Stringable
             }
 
             if (count($value) !== $count) {
-                throw new UnexpectedValueException(sprintf('The count value does not match with the expected (%d -> %d)', count($value), $count));
+                throw new LogicException(sprintf('The count value does not match with the expected (%d -> %d)', count($value), $count));
             }
         }
 
