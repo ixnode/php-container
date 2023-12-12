@@ -917,13 +917,13 @@ class Json implements Stringable
      * Adds a given value to this object.
      *
      * @param string|array<int, string> $path
-     * @param string|int|float|array<int|string, mixed>|null $value
+     * @param bool|string|int|float|array<int|string, mixed>|null $value
      * @return self
      * @throws TypeInvalidException
      * @link JsonTest::wrapperAddJson()
      * @link JsonTest::dataProviderAddJson()
      */
-    public function addValue(string|array|null $path, string|int|float|array|null $value): self
+    public function addValue(string|array|null $path, bool|string|int|float|array|null $value): self
     {
         $keys = $this->normalizePath($path);
 
