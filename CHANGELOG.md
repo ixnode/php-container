@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.16] - 2023-12-12
+
+* Add Json::getKeyArrayJson() method
+
 ### [0.1.15] - 2023-12-12
 
 * Add the bool type to Json::addValue
