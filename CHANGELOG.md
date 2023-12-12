@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.15] - 2023-12-12
+
+* Add the bool type to Json::addValue
+
 ### [0.1.14] - 2023-12-11
 
 * Add key path config to the key path
