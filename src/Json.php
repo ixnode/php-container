@@ -807,6 +807,36 @@ class Json implements Stringable
     }
 
     /**
+     * Returns the given key as array Json representation.
+     *
+     * @param string|string[] $keys
+     * @return array<int|string, Json>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getKeyArrayJson(string|array $keys): array
+    {
+        $values = $this->getKeyArray($keys);
+
+        $data = [];
+
+        foreach ($values as $key => $value) {
+            if (!is_array($value)) {
+                throw new TypeInvalidException('array', gettype($value));
+            }
+
+            $data[$key] = new Json($value);
+        }
+
+        return $data;
+    }
+
+    /**
      * Returns the given key as array<int, string> representation.
      *
      * @param string|string[] $keys
