@@ -214,7 +214,7 @@ $imageWidth = (new Image(new File('path-to-json-file')))->getWidth();
 #### 2.5.2) Returns a resized image.
 
 ```php
-$imageWidth = (new Image(new File('path-to-json-file')))->getImageString(1000, Image::FORMAT_JPG, 85);
+$imageString = (new Image(new File('path-to-json-file')))->getImageString(1000, Image::FORMAT_JPG, 85);
 ```
 
 ## 3.) Development
