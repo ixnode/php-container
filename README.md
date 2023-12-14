@@ -199,6 +199,24 @@ use Ixnode\PhpContainer\Curl;
 $text = (new Curl('URL')->getContentAsText();
 ```
 
+### 2.5) Image
+
+```php
+use Ixnode\PhpContainer\Image;
+```
+
+#### 2.5.1) Return width of given image.
+
+```php
+$imageWidth = (new Image(new File('path-to-json-file')))->getWidth();
+```
+
+#### 2.5.2) Returns a resized image.
+
+```php
+$imageWidth = (new Image(new File('path-to-json-file')))->getImageString(1000, Image::FORMAT_JPG, 85);
+```
+
 ## 3.) Development
 
 ```bash

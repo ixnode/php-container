@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Ixnode\PhpContainer;
+namespace Ixnode\PhpContainer\Constant;
 
 /**
  * Class Encoding

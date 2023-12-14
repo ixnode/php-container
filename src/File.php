@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * This file is part of the ixnode/php-container project.
  *
@@ -11,11 +9,14 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace Ixnode\PhpContainer;
 
 use Composer\Autoload\ClassLoader;
 use Exception;
 use Ixnode\PhpContainer\Base\BaseContainer;
+use Ixnode\PhpContainer\Constant\Encoding;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
