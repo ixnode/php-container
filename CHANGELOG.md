@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.19] - 2023-12-18
+
+* Translate integer value to string within Json::getKeyString
+* Remove method Json::isKey
+* Add Alias getKeyBoolean (from isKeyBoolean)
+
 ### [0.1.18] - 2023-12-14
 
 * Add Image class
