@@ -608,30 +608,6 @@ class Json implements Stringable
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function isKey(string|array $keys): bool
-    {
-        $value = $this->getKey($keys);
-
-        if (!is_bool($value)) {
-            throw new TypeInvalidException('boolean', gettype($value));
-        }
-
-        return $value;
-    }
-
-    /**
-     * Returns the given key as boolean representation.
-     *
-     * @param string|string[] $keys
-     * @return bool
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
     public function isKeyBoolean(string|array $keys): bool
     {
         $value = $this->getKey($keys);
@@ -660,6 +636,25 @@ class Json implements Stringable
     }
 
     /**
+     * Alias of isKeyBoolean().
+     *
+     * @param string|string[] $keys
+     * @return bool
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @SuppressWarnings(PHPMD.BooleanGetMethodName)
+     */
+    public function getKeyBoolean(string|array $keys): bool
+    {
+        return $this->isKeyBoolean($keys);
+    }
+
+    /**
      * Returns the given key as string representation.
      *
      * @param string|string[] $keys
@@ -675,6 +670,10 @@ class Json implements Stringable
     public function getKeyString(string|array $keys): string
     {
         $value = $this->getKey($keys);
+
+        if (is_int($value)) {
+            $value = (string) $value;
+        }
 
         if (!is_string($value)) {
             throw new TypeInvalidException('string', gettype($value));
