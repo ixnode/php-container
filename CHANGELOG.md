@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.21] - 2023-12-29
+
+* Add key mode "underline"
+
 ### [0.1.20] - 2023-12-29
 
-* Add key mode "underline" 
+* Add key mode "underline"
 
 ### [0.1.19] - 2023-12-18
 
