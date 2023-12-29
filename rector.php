@@ -41,3 +41,5 @@ return static function (RectorConfig $rectorConfig): void {
         UnionTypesRector::class,
     ]);
 };
+
+

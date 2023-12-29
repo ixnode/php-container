@@ -237,7 +237,7 @@ class File extends BaseContainer implements Stringable
     }
 
     /**
-     * Creates a file with given content, if file does not exist.
+     * Creates a file with given the content, if file does not exist.
      *
      * @param string|Json|null $data
      * @return bool

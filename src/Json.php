@@ -24,6 +24,8 @@ use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
+use Ixnode\PhpNamingConventions\NamingConventions;
 use JsonException;
 use LogicException;
 use Stringable;
@@ -43,15 +45,22 @@ class Json implements Stringable
     /** @var array<int|string, mixed> $json */
     protected array $json;
 
-    private const KEY_MODE_DIRECT = 'KEY_MODE_DIRECT';
+    /** @var array<int|string, mixed> $jsonTranslated */
+    protected array $jsonTranslated;
 
-    private const KEY_MODE_CONFIGURABLE = 'KEY_MODE_CONFIGURABLE';
+    public const KEY_MODE_DIRECT = 1;
+
+    public const KEY_MODE_UNDERLINE = 2;
+
+    public const KEY_MODE_CONFIGURABLE = 4;
 
     private const KEY_FIELD_NAME = 'key';
 
     private const SIGN_EQUAL = '=';
 
-    private string $keyMode = self::KEY_MODE_CONFIGURABLE;
+    private const SIGN_UNDERLINE = '_';
+
+    private int $keyMode = self::KEY_MODE_CONFIGURABLE;
 
     private bool $ignoreMissingKey = false;
 
@@ -64,6 +73,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function __construct(string|object|array $json)
     {
@@ -79,6 +89,22 @@ class Json implements Stringable
     public function __toString(): string
     {
         return $this->getJsonStringFormatted();
+    }
+
+    /**
+     * Sets the default key mode.
+     *
+     * @param int $keyMode
+     * @return self
+     * @throws FunctionReplaceException
+     */
+    public function setKeyMode(int $keyMode): self
+    {
+        $this->keyMode = $keyMode;
+
+        $this->translateJson();
+
+        return $this;
     }
 
     /**
@@ -204,7 +230,7 @@ class Json implements Stringable
      */
     public function getJsonStringFormatted(): string
     {
-        $json = $this->convertArrayToJson($this->json);
+        $json = $this->convertArrayToJson($this->jsonTranslated);
 
         if ($json === '[]') {
             $json = '{}';
@@ -222,7 +248,7 @@ class Json implements Stringable
      */
     public function getObject(): object
     {
-        return $this->convertArrayToObject($this->json);
+        return $this->convertArrayToObject($this->jsonTranslated);
     }
 
     /**
@@ -232,7 +258,7 @@ class Json implements Stringable
      */
     public function getArray(): array
     {
-        return $this->json;
+        return $this->jsonTranslated;
     }
 
     /**
@@ -244,7 +270,7 @@ class Json implements Stringable
     {
         $json = [];
 
-        foreach ($this->json as $index => $value) {
+        foreach ($this->jsonTranslated as $index => $value) {
             $json[strval($index)] = strval($value);
         }
 
@@ -255,7 +281,7 @@ class Json implements Stringable
      * Return if the given key exists.
      *
      * @param int|string|array<int, mixed> $keys
-     * @param string|null $keyMode
+     * @param int|null $keyMode
      * @return bool
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -263,15 +289,22 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function hasKey(int|string|array $keys, ?string $keyMode = null): bool
+    public function hasKey(int|string|array $keys, ?int $keyMode = null): bool
     {
         $keyMode = $keyMode ?: $this->keyMode;
 
-        return match ($keyMode) {
-            self::KEY_MODE_CONFIGURABLE => $this->hasKeyConfigurable($keys),
-            self::KEY_MODE_DIRECT => $this->hasKeyDirect($keys),
-            default => throw new CaseInvalidException($keyMode, [self::KEY_MODE_CONFIGURABLE, self::KEY_MODE_DIRECT]),
+        return match (true) {
+            ($keyMode & (self::KEY_MODE_CONFIGURABLE + self::KEY_MODE_DIRECT + self::KEY_MODE_UNDERLINE)) > 0 =>
+                $this->hasKeyConfigurable($keys),
+            ($keyMode & (self::KEY_MODE_DIRECT + self::KEY_MODE_UNDERLINE)) > 0 =>
+                $this->hasKeyDirect($keys),
+            default => throw new CaseInvalidException((string) $keyMode, [
+                (string) self::KEY_MODE_CONFIGURABLE,
+                (string) self::KEY_MODE_DIRECT,
+                (string) self::KEY_MODE_UNDERLINE,
+            ]),
         };
     }
 
@@ -279,15 +312,21 @@ class Json implements Stringable
      * Return if the given key exists (direct, without array key syntax).
      *
      * @param int|string|array<int, mixed> $keys
+     * @param int|null $keyMode
      * @return bool
      */
-    private function hasKeyDirect(int|string|array $keys): bool
+    private function hasKeyDirect(int|string|array $keys, ?int $keyMode = null): bool
     {
+        $keyMode = $keyMode ?: $this->keyMode;
+
         if (is_int($keys) || is_string($keys)) {
             $keys = [$keys];
         }
 
-        $data = $this->json;
+        $data = match (true) {
+            ($keyMode & self::KEY_MODE_UNDERLINE) > 0 => $this->jsonTranslated,
+            default => $this->json,
+        };
 
         foreach ($keys as $key) {
             if (!is_array($data)) {
@@ -314,23 +353,30 @@ class Json implements Stringable
      * This method is not so fast like the hasKeyDirect method, but it is more configurable in its outputs.
      *
      * @param int|string|array<int, mixed> $keys
+     * @param int|null $keyMode
      * @return bool
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
-    private function hasKeyConfigurable(int|string|array $keys): bool
+    private function hasKeyConfigurable(int|string|array $keys, ?int $keyMode = null): bool
     {
+        $keyMode = $keyMode ?: $this->keyMode;
+
         if (is_int($keys) || is_string($keys)) {
             $keys = [$keys];
         }
 
-        $data = $this->json;
+        $data = match (true) {
+            ($keyMode & self::KEY_MODE_UNDERLINE) > 0 => $this->jsonTranslated,
+            default => $this->json,
+        };
 
         /* No path given -> always true. */
         if (count($keys) === 0) {
@@ -394,17 +440,23 @@ class Json implements Stringable
      * This method is faster than the getKeyConfigurable method, but not so configurable in its outputs.
      *
      * @param int|string|array<int, mixed> $keys
+     * @param int|null $keyMode
      * @return mixed
      * @throws ArrayKeyNotFoundException
      * @throws TypeInvalidException
      */
-    private function getKeyDirect(int|string|array $keys): mixed
+    private function getKeyDirect(int|string|array $keys, ?int $keyMode = null): mixed
     {
+        $keyMode = $keyMode ?: $this->keyMode;
+
         if (is_int($keys) || is_string($keys)) {
             $keys = [$keys];
         }
 
-        $data = $this->json;
+        $data = match (true) {
+            ($keyMode & self::KEY_MODE_UNDERLINE) > 0 => $this->jsonTranslated,
+            default => $this->json,
+        };
 
         foreach ($keys as $key) {
             if (!is_array($data)) {
@@ -464,6 +516,7 @@ class Json implements Stringable
      * This method is not so fast like the getKeyDirect method, but it is more configurable in its outputs.
      *
      * @param int|string|array<int, mixed> $keys
+     * @param int|null $keyMode
      * @return mixed
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -472,16 +525,22 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
-    private function getKeyConfigurable(int|string|array $keys): mixed
+    private function getKeyConfigurable(int|string|array $keys, ?int $keyMode = null): mixed
     {
+        $keyMode = $keyMode ?: $this->keyMode;
+
         if (is_int($keys) || is_string($keys)) {
             $keys = [$keys];
         }
 
-        $data = $this->json;
+        $data = match (true) {
+            ($keyMode & self::KEY_MODE_UNDERLINE) > 0 => $this->jsonTranslated,
+            default => $this->json,
+        };
 
         /* No path given -> return data from root. */
         if (count($keys) === 0) {
@@ -572,7 +631,7 @@ class Json implements Stringable
      * Returns the given key as mixed representation.
      *
      * @param int|string|array<int, mixed> $keys
-     * @param string|null $keyMode
+     * @param int|null $keyMode
      * @return mixed
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -581,17 +640,24 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
-    public function getKey(int|string|array $keys, ?string $keyMode = null): mixed
+    public function getKey(int|string|array $keys, ?int $keyMode = null): mixed
     {
         $keyMode = $keyMode ?: $this->keyMode;
 
-        return match ($keyMode) {
-            self::KEY_MODE_CONFIGURABLE => $this->getKeyConfigurable($keys),
-            self::KEY_MODE_DIRECT => $this->getKeyDirect($keys),
-            default => throw new CaseInvalidException($keyMode, [self::KEY_MODE_CONFIGURABLE, self::KEY_MODE_DIRECT]),
+        return match (true) {
+            ($keyMode & (self::KEY_MODE_CONFIGURABLE + self::KEY_MODE_DIRECT  + self::KEY_MODE_UNDERLINE)) > 0 =>
+                $this->getKeyConfigurable($keys),
+            ($keyMode & (self::KEY_MODE_DIRECT + self::KEY_MODE_UNDERLINE)) > 0 =>
+                $this->getKeyDirect($keys),
+            default => throw new CaseInvalidException((string) $keyMode, [
+                (string) self::KEY_MODE_CONFIGURABLE,
+                (string) self::KEY_MODE_DIRECT,
+                (string) self::KEY_MODE_UNDERLINE,
+            ]),
         };
     }
 
@@ -607,6 +673,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function isKeyBoolean(string|array $keys): bool
     {
@@ -880,6 +947,50 @@ class Json implements Stringable
     }
 
     /**
+     * Translates the given data.
+     *
+     * @param array<int|string, mixed> $data
+     * @return array<int|string, mixed>
+     * @throws FunctionReplaceException
+     */
+    private function doTranslateData(array $data): array
+    {
+        if (($this->keyMode & self::KEY_MODE_UNDERLINE) <= 0) {
+            return $data;
+        }
+
+        $dataTranslated = [];
+
+        foreach ($data as $key => $value) {
+            $keyName = match (true) {
+                /* String value */
+                is_string($key) => (new NamingConventions($key))->getSeparated(self::SIGN_UNDERLINE),
+
+                /* Integer value */
+                default => $key,
+            };
+
+            $dataTranslated[$keyName] = match (true) {
+                is_array($value) => $this->doTranslateData($value),
+                default => $value,
+            };
+        }
+
+        return $dataTranslated;
+    }
+
+    /**
+     * Translates the Json object to the given key mode.
+     *
+     * @return void
+     * @throws FunctionReplaceException
+     */
+    private function translateJson(): void
+    {
+        $this->jsonTranslated = $this->doTranslateData($this->json);
+    }
+
+    /**
      * Sets the path of this container.
      *
      * @param string|object|array<int|string, mixed> $json
@@ -889,6 +1000,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function setJson(string|object|array $json): self
     {
@@ -899,6 +1011,8 @@ class Json implements Stringable
             is_array($json) => $json,
             is_object($json) => $this->convertObjectToArray($json),
         };
+
+        $this->translateJson();
 
         return $this;
     }
@@ -912,6 +1026,7 @@ class Json implements Stringable
      * @throws TypeInvalidException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
+     * @throws FunctionReplaceException
      * @link JsonTest::wrapperAddJson()
      * @link JsonTest::dataProviderAddJson()
      */
@@ -939,6 +1054,8 @@ class Json implements Stringable
 
         $this->json = $jsonSource;
 
+        $this->translateJson();
+
         return $this;
     }
 
@@ -949,6 +1066,7 @@ class Json implements Stringable
      * @param bool|string|int|float|array<int|string, mixed>|null $value
      * @return self
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      * @link JsonTest::wrapperAddJson()
      * @link JsonTest::dataProviderAddJson()
      */
@@ -974,6 +1092,8 @@ class Json implements Stringable
         $jsonAnchor = $value;
 
         $this->json = $jsonSource;
+
+        $this->translateJson();
 
         return $this;
     }

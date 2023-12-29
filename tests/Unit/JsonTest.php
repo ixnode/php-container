@@ -21,6 +21,7 @@ use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use PHPUnit\Framework\TestCase;
 
@@ -624,6 +625,150 @@ final class JsonTest extends TestCase
                         'area2' => '444'
                     ],
                 ],
+            ],
+        ];
+    }
+
+
+    /**
+     * Test wrapper for key modes.
+     *
+     * @dataProvider dataProviderKeyModes
+     *
+     * @test
+     * @testdox $number) Test Json::setKeyMode, Json::hasKey, Json::getKey
+     * @param int $number
+     * @param int $keyMode
+     * @param string|object|array<int|string, mixed> $data
+     * @param int|string|array<int, mixed> $keys
+     * @param bool $hasExpected
+     * @param mixed $dataExpected
+     * @param class-string<TypeInvalidException>|null $exception
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function wrapperKeyModes(
+        int                 $number,
+        int                 $keyMode,
+        string|object|array $data,
+        int|string|array    $keys,
+        bool                $hasExpected,
+        mixed               $dataExpected,
+        ?string             $exception = null
+    ): void
+    {
+        /* Arrange */
+        if (is_string($exception)) {
+            $this->expectException($exception);
+        }
+
+        /* Act */
+        $json = (new Json($data))->setKeyMode($keyMode);
+
+        /* Assert */
+        $this->assertIsNumeric($number); // To avoid phpmd warning.
+        $this->assertSame($hasExpected, $json->hasKey($keys));
+
+        /* Assert */
+        if ($json->hasKey($keys)) {
+            $this->assertSame($dataExpected, $json->getKey($keys));
+        }
+    }
+
+    /**
+     * Data provider for key modes.
+     *
+     * @return array<int, array<int, mixed>>
+     */
+    public function dataProviderKeyModes(): array
+    {
+        $number = 0;
+
+        return [
+            /* direct mode */
+            [
+                ++$number,
+                Json::KEY_MODE_DIRECT,
+                '{"key-one": 111, "key-two": "222"}',
+                'key-one',
+                true,
+                111
+            ],
+            [
+                ++$number,
+                Json::KEY_MODE_DIRECT,
+                '{"key-one": {"foo-xyz": "bar-1"}, "key-two": {"foo-abc": "bar-2"}}',
+                'key-one',
+                true,
+                ["foo-xyz" => "bar-1"]
+            ],
+            [
+                ++$number,
+                Json::KEY_MODE_DIRECT,
+                '{"key-one": 111, "key-two": "222"}',
+                'key-three',
+                false,
+                null
+            ],
+
+            /* underline mode */
+            [
+                ++$number,
+                Json::KEY_MODE_UNDERLINE,
+                '{"key-one": 111, "key-two": "222"}',
+                'key_one',
+                true,
+                111
+            ],
+            [
+                ++$number,
+                Json::KEY_MODE_UNDERLINE,
+                '{"key-one": {"foo": "bar1"}, "key-two": {"foo": "bar2"}}',
+                'key_one',
+                true,
+                ["foo" => "bar1"]
+            ],
+            [
+                ++$number,
+                Json::KEY_MODE_UNDERLINE,
+                '{"key-one": {"foo-xyz": "bar-1"}, "key-two": {"foo-abc": "bar-2"}}',
+                'key_one',
+                true,
+                ["foo_xyz" => "bar-1"]
+            ],
+
+            /* configurable key mode */
+            [
+                ++$number,
+                Json::KEY_MODE_CONFIGURABLE,
+                '{"data": [{"key-one": 111, "key-two": "222"}, {"key-one": 111, "key-two": "222"}]}',
+                ['data', ['key-one']],
+                true,
+                [111, 111]
+            ],
+
+            /* mixed key mode */
+            [
+                ++$number,
+                Json::KEY_MODE_CONFIGURABLE + Json::KEY_MODE_UNDERLINE,
+                '{"data-abc": [{"key-one": 111, "key-two": "222"}, {"key-one": 111, "key-two": "222"}]}',
+                ['data_abc', ['key_one']],
+                true,
+                [111, 111]
+            ],
+            [
+                ++$number,
+                Json::KEY_MODE_CONFIGURABLE + Json::KEY_MODE_UNDERLINE,
+                '{"data-abc": [{"key-one": {"foo-xyz": "bar-1"}, "key-two": "222"}, {"key-one": {"foo-abc": "bar-1"}, "key-two": "222"}]}',
+                ['data_abc', ['key_one']],
+                true,
+                [['foo_xyz' => 'bar-1'], ['foo_abc' => 'bar-1']]
             ],
         ];
     }
