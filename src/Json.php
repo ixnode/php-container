@@ -851,7 +851,7 @@ class Json implements Stringable
     /**
      * Returns the given key as array representation.
      *
-     * @param string|string[] $keys
+     * @param int|string|array<int, mixed> $keys
      * @return array<int|string, mixed>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -860,8 +860,9 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function getKeyArray(string|array $keys): array
+    public function getKeyArray(int|string|array $keys): array
     {
         $value = $this->getKey($keys);
 
@@ -875,7 +876,7 @@ class Json implements Stringable
     /**
      * Returns the given key as array Json representation.
      *
-     * @param string|string[] $keys
+     * @param int|string|array<int, mixed> $keys
      * @return array<int|string, Json>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -884,8 +885,9 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function getKeyArrayJson(string|array $keys): array
+    public function getKeyArrayJson(int|string|array $keys): array
     {
         $values = $this->getKeyArray($keys);
 
@@ -905,7 +907,7 @@ class Json implements Stringable
     /**
      * Returns the given key as array<int, string> representation.
      *
-     * @param string|string[] $keys
+     * @param int|string|array<int, mixed> $keys
      * @return array<int, string>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -914,8 +916,9 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function getKeyArrayString(string|array $keys): array
+    public function getKeyArrayString(int|string|array $keys): array
     {
         $array = [];
 
@@ -929,7 +932,7 @@ class Json implements Stringable
     /**
      * Returns the given key as json representation.
      *
-     * @param string|string[] $keys
+     * @param int|string|array<int, mixed> $keys
      * @return Json
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -938,8 +941,9 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function getKeyJson(string|array $keys): Json
+    public function getKeyJson(int|string|array $keys): Json
     {
         $array = $this->getKeyArray($keys);
 
