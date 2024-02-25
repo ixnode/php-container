@@ -478,6 +478,61 @@ class Json implements Stringable
     }
 
     /**
+     * Deletes the given key as mixed representation (direct - with array key syntax).
+     *
+     * This method is faster than the deleteKeyConfigurable method, but not so configurable in its outputs.
+     *
+     * @param int|string|array<int, mixed> $keys
+     * @return void
+     * @throws ArrayKeyNotFoundException
+     * @throws FunctionReplaceException
+     * @throws TypeInvalidException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    private function deleteKeyDirect(int|string|array $keys): void
+    {
+        if (is_int($keys) || is_string($keys)) {
+            $keys = [$keys];
+        }
+
+        $data = &$this->json;
+
+        $lastKey = null;
+        $lastData = null;
+        foreach ($keys as $key) {
+            if (!is_array($data)) {
+                throw new TypeInvalidException('array', gettype($data));
+            }
+
+            if (!is_int($key) && !is_string($key)) {
+                throw new TypeInvalidException('string', 'array');
+            }
+
+            if (!array_key_exists($key, $data)) {
+                throw new ArrayKeyNotFoundException(strval($key));
+            }
+
+            $lastKey = $key;
+            $lastData = &$data;
+            $data = &$data[$key];
+        }
+
+        if (is_null($lastKey) || is_null($lastData)) {
+            return;
+        }
+
+        $isIndexedArray = $this->isIndexedArray($lastData);
+        unset($lastData[$lastKey]);
+
+        if ($isIndexedArray) {
+            $lastData = array_values($lastData);
+        }
+
+        $this->jsonTranslated = $this->doTranslateData($this->json);
+    }
+
+    /**
      * Read config from the given key path.
      *
      * @param array<int, mixed> $keys
@@ -641,8 +696,6 @@ class Json implements Stringable
      * @throws JsonException
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function getKey(int|string|array $keys, ?int $keyMode = null): mixed
     {
@@ -659,6 +712,21 @@ class Json implements Stringable
                 (string) self::KEY_MODE_UNDERLINE,
             ]),
         };
+    }
+
+    /**
+     * Removes the given key from this Json object.
+     *
+     * @param int|string|array<int, mixed> $keys
+     * @return void
+     * @throws ArrayKeyNotFoundException
+     * @throws FunctionReplaceException
+     * @throws TypeInvalidException
+     */
+    public function deleteKey(int|string|array $keys): void
+    {
+        /* TODO: Implement deleteKeyConfigurable() method according to key mode. */
+        $this->deleteKeyDirect($keys);
     }
 
     /**
@@ -1207,5 +1275,16 @@ class Json implements Stringable
         }
 
         return $arrayCombined;
+    }
+
+    /**
+     * Checks if the given array is indexed array.
+     *
+     * @param array<int|string, mixed> $array
+     * @return bool
+     */
+    private function isIndexedArray(array $array): bool
+    {
+        return array_values($array) === $array;
     }
 }

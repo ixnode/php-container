@@ -182,6 +182,65 @@ final class JsonTest extends TestCase
 
 
     /**
+     * Test wrapper (Json::addJson).
+     *
+     * @dataProvider dataProviderDeleteKey
+     *
+     * @test
+     * @testdox $number) Test Json::addJson
+     * @param int $number
+     * @param string|object|array<int|string, mixed> $data
+     * @param string|array<int, string>|int $path
+     * @param class-string<TypeInvalidException>|array<int|string, mixed> $expected
+     * @throws Exception
+     */
+    public function wrapperDeleteKey(int $number, string|object|array $data, string|array|int $path, array|string $expected): void
+    {
+        /* Arrange */
+        if (is_string($expected)) {
+            $this->expectException($expected);
+        }
+
+        /* Act */
+        $json = new Json($data);
+        $json->deleteKey($path);
+
+        /* Assert */
+        $this->assertIsNumeric($number); // To avoid phpmd warning.
+        $this->assertEquals($expected, $json->getArray());
+    }
+
+    /**
+     * Data provider (Json::addJson).
+     *
+     * @return array<int, array<int, mixed>>
+     */
+    public function dataProviderDeleteKey(): array
+    {
+        $number = 0;
+
+        return [
+            [++$number, '[]', [], [], ],
+            [++$number, '[1, 2, 3]', [], [1, 2, 3], ],
+            [++$number, '[1, 2, 3]', [0], [2, 3], ],
+            [++$number, '[1, 2, 3]', [4], ArrayKeyNotFoundException::class],
+
+            [++$number, '{"version": "1.0.0", "data": []}', [], ["version" => "1.0.0", "data" => [], ], ],
+            [++$number, '{"version": "1.0.0", "data": []}', ['version'], ["data" => [], ], ],
+
+            [++$number, '{"version": "1.0.0", "data": [1, 2, 3]}', [], ["version" => "1.0.0", "data" => [1, 2, 3], ], ],
+            [++$number, '{"version": "1.0.0", "data": {"test-1": 1, "test-2": 2}}', [], ["version" => "1.0.0", "data" => ["test-1" => 1, "test-2" => 2], ], ],
+
+            [++$number, '{"version": "1.0.0", "data": [1, 2, 3]}', ["data"], ["version" => "1.0.0", ], ],
+            [++$number, '{"version": "1.0.0", "data": [1, 2, 3]}', ["data", 0], ["version" => "1.0.0", "data" => [2, 3], ], ],
+            [++$number, '{"version": "1.0.0", "data": {"test-1": 1, "test-2": 2}}', ["data"], ["version" => "1.0.0", ], ],
+            [++$number, '{"version": "1.0.0", "data": {"test-1": 1, "test-2": 2}}', ["data", "test-1"], ["version" => "1.0.0", "data" => ["test-2" => 2], ], ],
+        ];
+    }
+
+
+
+    /**
      * Test wrapper (Json::hasKey).
      *
      * @dataProvider dataProviderHasKey
@@ -384,7 +443,6 @@ final class JsonTest extends TestCase
     }
 
 
-
     /**
      * Test wrapper (Json::getKeyX).
      *
@@ -398,13 +456,12 @@ final class JsonTest extends TestCase
      * @param string|array<int, string|array<int, string>> $path
      * @param mixed $expected
      * @param class-string<TypeInvalidException>|null $exception
-     * @throws TypeInvalidException
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
+     * @throws TypeInvalidException
      */
     public function wrapperGetKeyType(int $number, string $method, string|object|array $data, string|array $path, mixed $expected, ?string $exception = null): void
     {
@@ -654,13 +711,13 @@ final class JsonTest extends TestCase
      * @throws FunctionReplaceException
      */
     public function wrapperKeyModes(
-        int                 $number,
-        int                 $keyMode,
+        int $number,
+        int $keyMode,
         string|object|array $data,
-        int|string|array    $keys,
-        bool                $hasExpected,
-        mixed               $dataExpected,
-        ?string             $exception = null
+        int|string|array $keys,
+        bool $hasExpected,
+        mixed $dataExpected,
+        ?string $exception = null
     ): void
     {
         /* Arrange */
