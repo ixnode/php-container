@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [0.1.24] - 2024-11-30
+
+* Add ignore orientation flag to Image class
+  * Resets the orientation autocorrection of GdImage
+
 ### [0.1.23] - 2024-02-25
 
 * Add simple JSON::deleteKey method (missing so far)
