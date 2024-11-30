@@ -44,16 +44,32 @@ class Image implements Stringable
 
     public const FORMAT_XPM = 'xpm';
 
+    public const ORIENTATION_NORMAL = 1; /* Normal orientation. */
+
+    public const ORIENTATION_FLIP_HORIZONTAL = 2; /* Horizontal flip orientation. */
+
+    public const ORIENTATION_ROTATE_180 = 3; /* Upside down orientation. */
+
+    public const ORIENTATION_FLIP_VERTICAL = 4; /* Vertical flip orientation. */
+
+    public const ORIENTATION_ROTATE_90_CW = 6; /* 90° clockwise orientation. */
+
+    public const ORIENTATION_ROTATE_90_CCW = 8; /* 90° counter-clockwise orientation. */
+
     private string $imageString;
+
+    private int|null $orientation = null;
 
     private GdImage|null $gdImage = null;
 
     /**
      * @param string|File $image
+     * @param bool $ignoreOrientation
      * @throws FileNotFoundException
      * @throws FileNotReadableException
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function __construct(string|File $image)
+    public function __construct(string|File $image, private bool $ignoreOrientation = false)
     {
         $this->readImage($image);
     }
@@ -222,6 +238,30 @@ class Image implements Stringable
             return null;
         }
 
+        /* Fix orientation: GdImage use the exif orientation data to rotate the image automatically. */
+        if ($this->ignoreOrientation && !is_null($this->orientation)) {
+
+            $gdImageRotated = match ($this->orientation) {
+                /* Upside down rotation. */
+                self::ORIENTATION_ROTATE_180 => imagerotate($gdImage, 180, 0),
+
+                /* Rotated 90° clockwise. */
+                self::ORIENTATION_ROTATE_90_CW => imagerotate($gdImage, -90, 0),
+
+                /* Rotated 90° counter-clockwise. */
+                self::ORIENTATION_ROTATE_90_CCW => imagerotate($gdImage, 90, 0),
+
+                /* Default. */
+                default => $gdImage,
+            };
+
+            /* Use rotated GdImage object. */
+            $gdImage = match (true) {
+                $gdImageRotated instanceof GdImage => $gdImageRotated,
+                default => $gdImage,
+            };
+        }
+
         return $gdImage;
     }
 
@@ -235,12 +275,34 @@ class Image implements Stringable
      */
     private function readImage(string|File $image): void
     {
+        $this->readExifData($image);
+
         $this->imageString = match (true) {
             $image instanceof File => $image->getContentAsText(),
             default => $image,
         };
 
         $this->gdImage = $this->getGdImage();
+    }
+
+    /**
+     * Extracts needed exif data.
+     *
+     * @param string|File $image
+     * @return void
+     * @SuppressWarnings(PHPMD.ErrorControlOperator)
+     */
+    private function readExifData(string|File $image): void
+    {
+        if (is_string($image)) {
+            return;
+        }
+
+        $exifData = @exif_read_data($image->getPath());
+
+        if (!empty($exifData['Orientation'])) {
+            $this->orientation = (int) $exifData['Orientation'];
+        }
     }
 
     /**

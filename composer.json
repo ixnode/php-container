@@ -24,6 +24,7 @@
   "require": {
     "php": "^8.0",
     "ext-curl": "*",
+    "ext-exif": "*",
     "ext-gd": "*",
     "ixnode/php-exception": "^0.1.19",
     "ixnode/php-checker": "^0.1.8",

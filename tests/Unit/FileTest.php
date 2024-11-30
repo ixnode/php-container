@@ -123,7 +123,7 @@ final class FileTest extends TestCase
         $number = 0;
 
         return [
-            [++$number, 'data/json/simple.json', 29, true, ],
+            [++$number, 'data/json/simple.json', 27, true, ],
         ];
     }
 
@@ -167,7 +167,7 @@ final class FileTest extends TestCase
         $number = 0;
 
         return [
-            [++$number, 'data/json/simple.json', '29 Bytes', true, ],
+            [++$number, 'data/json/simple.json', '27 Bytes', true, ],
         ];
     }
 }
