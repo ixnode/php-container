@@ -27,8 +27,8 @@
     "ext-curl": "*",
     "ext-exif": "*",
     "ext-gd": "*",
+    "ixnode/php-checker": "^0.1.9",
     "ixnode/php-exception": "^0.1.22",
-    "ixnode/php-checker": "^0.1.8",
     "ixnode/php-size-byte": "^0.1.2",
     "ixnode/php-naming-conventions": "^0.1.1",
     "ixnode/php-coordinate": "^1.0"
@@ -39,7 +39,7 @@
     "rector/rector": "^0.15.1",
     "phpmd/phpmd": "^2.13",
     "friendsofphp/php-cs-fixer": "^3.13",
-    "ixnode/bash-version-manager": "^0.1.3",
+    "ixnode/bash-version-manager": "^0.1.10",
     "povils/phpmnd": "^3.0"
   },
   "bin": [
