@@ -27,10 +27,11 @@
     "ext-curl": "*",
     "ext-exif": "*",
     "ext-gd": "*",
-    "ixnode/php-exception": "^0.1.19",
+    "ixnode/php-exception": "^0.1.21",
     "ixnode/php-checker": "^0.1.8",
     "ixnode/php-size-byte": "^0.1.2",
-    "ixnode/php-naming-conventions": "^0.1.1"
+    "ixnode/php-naming-conventions": "^0.1.1",
+    "ixnode/php-coordinate": "1.0.1"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5",
