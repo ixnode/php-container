@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.1] - 2024-12-07
+
+* Update ixnode packages
+
 ### [1.0.0] - 2024-12-07
 
 * Extend image class with some exif data
