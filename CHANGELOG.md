@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.0] - 2024-12-07
+
+* Extend image class with some exif data
+* Add image test
+
 ### [0.1.24] - 2024-11-30
 
 * Add ignore orientation flag to Image class
