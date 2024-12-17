@@ -37,11 +37,11 @@ final class Csv implements Stringable
     /** @var array<int, string>|null $header */
     private ?array $header = null;
 
-    private string $separator = ";";
-
-    private string $enclosure = '"';
-
     private string $escape  = "\\";
+
+    private const DEFAULT_SEPARATOR = ';';
+
+    private const DEFAULT_ENCLOSURE = '"';
 
     /**
      * File constructor.
@@ -55,7 +55,12 @@ final class Csv implements Stringable
      * @throws TypeInvalidException
      * @throws ArrayCountException
      */
-    public function __construct(string|object|array $csv, ?array $header = null)
+    public function __construct(
+        string|object|array $csv,
+        ?array $header = null,
+        private string $separator = self::DEFAULT_SEPARATOR,
+        private string $enclosure = self::DEFAULT_ENCLOSURE
+    )
     {
         $this->setCsv($csv, $header);
     }
@@ -133,6 +138,11 @@ final class Csv implements Stringable
         $csvArray = [];
 
         foreach ($lines as $line) {
+            /* Ignore empty lines. */
+            if (empty($line)) {
+                continue;
+            }
+
             $array = str_getcsv($line, $this->separator, $this->enclosure, $this->escape);
 
             if (is_null($this->header)) {

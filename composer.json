@@ -26,6 +26,7 @@
     "php": "^8.0",
     "ext-curl": "*",
     "ext-exif": "*",
+    "ext-fileinfo": "*",
     "ext-gd": "*",
     "ixnode/php-checker": "^0.1.9",
     "ixnode/php-exception": "^0.1.22",

@@ -15,16 +15,19 @@ namespace Ixnode\PhpContainer;
 
 use Composer\Autoload\ClassLoader;
 use Exception;
-use Ixnode\PhpContainer\Base\BaseContainer;
+use Ixnode\PhpContainer\Base\BaseFile;
 use Ixnode\PhpContainer\Constant\Encoding;
+use Ixnode\PhpContainer\Constant\MimeTypes;
+use Ixnode\PhpException\ArrayType\ArrayCountException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use Ixnode\PhpSizeByte\SizeByte;
 use JsonException;
+use LogicException;
 use ReflectionClass;
-use Stringable;
 
 /**
  * Class File
@@ -32,8 +35,10 @@ use Stringable;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2022-12-30)
  * @since 0.1.0 (2022-12-30) First version.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class File extends BaseContainer implements Stringable
+class File extends BaseFile
 {
     private const PATH_NUMBERED = '%s.%05d.%s';
 
@@ -43,20 +48,9 @@ class File extends BaseContainer implements Stringable
 
     private const FORMAT_DATE_DEFAULT = 'l, F d, Y - H:i:s';
 
-    private ?string $directoryRoot = null;
+    private const TEMPLATE_FILE_STANDARD = '%%s %%%ss   [%%%ss]   %%%ss   // %%%ss; %%%ss';
 
-    /**
-     * File constructor.
-     *
-     * @param string $path
-     * @param string|null $rootDir
-     */
-    public function __construct(protected string $path, ?string $rootDir = null)
-    {
-        if ($rootDir !== null) {
-            $this->setPath(sprintf('%s/%s', $rootDir, $this->getPath()));
-        }
-    }
+    private ?string $directoryRoot = null;
 
     /**
      * Returns the path of this container.
@@ -188,17 +182,96 @@ class File extends BaseContainer implements Stringable
     }
 
     /**
-     * Checks if file exists.
+     * Returns the mime type of the file.
      *
-     * @return bool
+     * @inheritdoc
      */
-    public function exist(): bool
+    public function getMimeType(): string
     {
-        if (realpath($this->path) === false) {
-            return false;
+        return parent::getMimeType();
+    }
+
+    /**
+     * Returns the icon of the file.
+     *
+     * @inheritdoc
+     */
+    public function getIcon(): string
+    {
+        return parent::getIcon();
+    }
+
+    /**
+     * Returns information about this file.
+     *
+     * @param (callable(BaseFile, array<string, int|null>): string)|null $callback A callback that receives the current File instance and returns a string.
+     * @param array<string, int|null> $distance
+     * @return string
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    public function getInformation(
+        callable $callback = null,
+        array $distance = [
+            'file' => null,
+            'type' => null,
+            'date' => null,
+            'encoding' => null,
+            'size' => null,
+        ]
+    ): string
+    {
+        if (!$this->exist()) {
+            throw new FileNotFoundException($this->path);
         }
 
-        return true;
+        /* Add default callback. */
+        if ($callback === null) {
+            return $this->baseGetInformation($distance);
+        }
+
+        return $callback($this, $distance);
+    }
+
+    /**
+     * The base callback function for method getInformation.
+     *
+     * @param array<string, int|null> $distance
+     * @return string
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    private function baseGetInformation(array $distance): string
+    {
+        $template = sprintf(
+            self::TEMPLATE_FILE_STANDARD,
+            !empty($distance['file']) ? -$distance['file'] : '',
+            !empty($distance['type']) ? -$distance['type'] : '',
+            !empty($distance['date']) ? -$distance['date'] : '',
+            !empty($distance['encoding']) ? -$distance['encoding'] : '',
+            !empty($distance['size']) ? -$distance['size'] : '',
+        );
+
+        $type = $this->getType();
+        $encoding = $this->getEncoding();
+
+        $typeName = match ($type) {
+            BaseFile::TYPE_FILE => 'FILE',
+            BaseFile::TYPE_DIRECTORY => 'DIR',
+            BaseFile::TYPE_SYMLINK => 'LINK',
+            BaseFile::TYPE_UNKNOWN => 'UNKNOWN',
+            default => throw new LogicException(sprintf('Unknown file type: %s', $type)),
+        };
+
+        return sprintf(
+            $template,
+            $this->getIcon(),
+            $this->getBaseName(),
+            $typeName,
+            $this->getDate('Y-m-d H:i:s'),
+            $encoding,
+            $this->getFileSizeHuman()
+        );
     }
 
     /**
@@ -365,20 +438,64 @@ class File extends BaseContainer implements Stringable
     }
 
     /**
-     * Returns the file content as JSON object.
+     * Returns the file content (json) as JSON object.
      *
-     * @return Json
+     * @return Json|null
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
      * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function getJson(): Json
+    public function getJson(): Json|null
     {
+        $mimeType = $this->getMimeType();
+
+        if ($mimeType !== MimeTypes::APPLICATION_JSON_TYPE) {
+            return null;
+        }
+
         $contentAsText = $this->getContentAsText();
 
         return new Json($contentAsText);
+    }
+
+    /**
+     * Returns the file content (csv) as CSV object.
+     *
+     * @return Csv|null
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws ArrayCountException
+     */
+    public function getCsv(): Csv|null
+    {
+        $mimeType = $this->getMimeType();
+
+        if ($mimeType !== MimeTypes::TEXT_CSV_TYPE) {
+            return null;
+        }
+
+        $detectedCsvFormat = $this->detectCsvFormat();
+
+        if (is_null($detectedCsvFormat)) {
+            return null;
+        }
+
+        $separator = $detectedCsvFormat[BaseFile::KEY_SEPARATOR];
+        $enclosure = $detectedCsvFormat[BaseFile::KEY_ENCLOSURE];
+
+        $contentAsText = $this->getContentAsText();
+
+        return new Csv(
+            csv: $contentAsText,
+            separator: $separator,
+            enclosure: $enclosure
+        );
     }
 
     /**
@@ -390,6 +507,10 @@ class File extends BaseContainer implements Stringable
      */
     public function getEncoding(): string|false
     {
+        if ($this->isImage()) {
+            return false;
+        }
+
         $content = $this->getContentAsText();
 
         $bom = substr($content, 0, 3);

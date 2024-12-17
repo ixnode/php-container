@@ -133,7 +133,7 @@ function readParameter
                 local parameter="$1"
 
                 if [[ "$parameter" = -* ]]; then
-                    echo && error "Unknown option \"$parameter\". Abort."
+                    echo && echo "Unknown option \"$parameter\". Abort."
                     echo && showVersion && showHelp && exit 1
                 fi
 
