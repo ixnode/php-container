@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.4] - 2024-12-17
+
+* Add bin/php-container script updates
+
 ### [1.0.3] - 2024-12-17
 
 * Add mime types
