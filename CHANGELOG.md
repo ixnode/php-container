@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.3] - 2024-12-17
+
+* Add mime types
+* Add mime type icons
+* Add csv and json returns
+* Add File::getInformation method with callback
+* Add tests
+* Add bin/console ls command
+
 ### [1.0.2] - 2024-12-07
 
 * Update ixnode packages
