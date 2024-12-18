@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.11] - 2024-12-18
+
+* Add path check and error message
+
 ### [1.0.10] - 2024-12-18
 
 * Add Directory and Symlink object
