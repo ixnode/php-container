@@ -90,7 +90,7 @@ class LsCommand extends Command
         }
 
         $this->writer->write(PHP_EOL);
-        $this->writer->write('Default output'.PHP_EOL);
+        $this->writer->write('Default output (@see \Ixnode\PhpContainer\File::getInformation)'.PHP_EOL);
         $this->writer->write($file->getInformation(), true);
 
         $distance = [
@@ -99,7 +99,7 @@ class LsCommand extends Command
         ];
 
         $this->writer->write(PHP_EOL);
-        $this->writer->write('Callback output'.PHP_EOL);
+        $this->writer->write('Callback output (@see \Ixnode\PhpContainer\Command\LsCommand::execute)'.PHP_EOL);
         $this->writer->write($file->getInformation(function ($file, $distance): string {
             $template = '%%s %%%ss   [%%%ss]';
 
