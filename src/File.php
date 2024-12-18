@@ -13,21 +13,22 @@ declare(strict_types=1);
 
 namespace Ixnode\PhpContainer;
 
-use Composer\Autoload\ClassLoader;
 use Exception;
 use Ixnode\PhpContainer\Base\BaseFile;
 use Ixnode\PhpContainer\Constant\Encoding;
+use Ixnode\PhpContainer\Constant\MimeTypeIcons;
 use Ixnode\PhpContainer\Constant\MimeTypes;
 use Ixnode\PhpException\ArrayType\ArrayCountException;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use Ixnode\PhpSizeByte\SizeByte;
 use JsonException;
 use LogicException;
-use ReflectionClass;
 
 /**
  * Class File
@@ -46,43 +47,17 @@ class File extends BaseFile
 
     public const PATH_TEMP = 'tmp';
 
-    private const FORMAT_DATE_DEFAULT = 'l, F d, Y - H:i:s';
-
     private const TEMPLATE_FILE_STANDARD = '%%s %%%ss   [%%%ss]   %%%ss   // %%%ss; %%%ss; %%%ss';
 
-    private ?string $directoryRoot = null;
-
     /**
-     * Returns the path of this container.
-     *
-     * @return string
      */
-    public function __toString(): string
+    public function __construct(string $path, ?string $rootDir = null)
     {
-        return $this->path;
-    }
+        parent::__construct($path, $rootDir);
 
-    /**
-     * Returns the path of this container.
-     *
-     * @return string
-     */
-    public function getPath(): string
-    {
-        return $this->path;
-    }
-
-    /**
-     * Sets the path of this container.
-     *
-     * @param string $path
-     * @return $this
-     */
-    public function setPath(string $path): self
-    {
-        $this->path = $path;
-
-        return $this;
+        if (!$this->isFile()) {
+            throw new LogicException('Given path is not a file.');
+        }
     }
 
     /**
@@ -198,19 +173,39 @@ class File extends BaseFile
      */
     public function getIcon(): string
     {
-        return parent::getIcon();
+        $mimeType = $this->getMimeType();
+
+        return match (true) {
+
+            /* Configuration and log files. */
+            $mimeType === MimeTypes::APPLICATION_JSON_TYPE,
+                $mimeType === MimeTypes::APPLICATION_YAML_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
+
+            /* Documents. */
+            $mimeType === MimeTypes::TEXT_PLAIN_TYPE => MimeTypeIcons::TEXTS_AND_MARKDOWNS, // .txt, .md, etc.
+
+
+            /* image/svg+xml */
+            $mimeType === MimeTypes::IMAGE_SVG_XML_TYPE => MimeTypeIcons::VECTOR_GRAPHICS, // .svg, etc.
+
+            /* image/ */
+            str_starts_with($mimeType, MimeTypes::GROUP_IMAGE) => MimeTypeIcons::IMAGES, // .png, .jpg, .jpeg, .gif, etc.
+
+            /* other and unknown mime types. */
+            default => MimeTypeIcons::OTHER,
+        };
     }
 
     /**
-     * Returns information about this file.
+     * Returns information about this file (one-liner).
      *
-     * @param (callable(BaseFile, array<string, int|null>): string)|null $callback A callback that receives the current File instance and returns a string.
+     * @param (callable(File, array<string, int|null>): string)|null $callback A callback that receives the current File instance and returns a string.
      * @param array<string, int|null> $distance
      * @return string
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      */
-    public function getInformation(
+    public function getFileInformation(
         callable $callback = null,
         array $distance = [
             'file' => null,
@@ -235,6 +230,230 @@ class File extends BaseFile
     }
 
     /**
+     * Returns information about this file (table output).
+     *
+     * @param array<string, array<int, string>> $default
+     * @param array<string, string> $additional
+     * @return string
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws \DateInvalidTimeZoneException
+     * @throws \DateMalformedStringException
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     */
+    public function getFileInformationTable(
+        array $default = [
+            'general' => [
+                'name',
+                'type',
+                'size',
+                'mtime',
+                'ctime',
+                'atime',
+                'permission',
+                'owner',
+                'encoding'
+            ],
+            'image' => [
+                'size',
+                'coordinate',
+            ]
+        ],
+        array $additional = null,
+    ): string
+    {
+        /* Get name of the file. */
+        $nameFull = match (true) {
+            array_key_exists('general', $default) && in_array('name', $default['general'], true) => sprintf('%s %s', $this->getIcon(), $this->getBaseName()),
+            default => null,
+        };
+
+        $outputArray = [];
+
+        /* Add default values. */
+        if (array_key_exists('general', $default)) {
+            $generalConfiguration = $default['general'];
+            $outputArrayGeneral = [];
+            $encoding = $this->getEncoding();
+
+            foreach ($generalConfiguration as $key) {
+                if ($key === 'name') {
+                    continue;
+                }
+
+                $value = match ($key) {
+                    'type' => sprintf('%s (%s)', $this->getTypeName(), $this->getMimeType()),
+                    'size' => $this->getFileSizeHuman(),
+                    'mtime' => $this->getDate('Y-m-d H:i:s'),
+                    'ctime' => $this->getDate('Y-m-d H:i:s', BaseFile::FILE_CTIME),
+                    'atime' => $this->getDate('Y-m-d H:i:s', BaseFile::FILE_ATIME),
+                    'permission' => $this->getPermission(),
+                    'owner' => $this->getOwnerGroup(),
+                    'encoding' => is_string($encoding) ? $encoding : null,
+                    default => throw new LogicException('Unknown key: ' . $key),
+                };
+
+                if (is_null($value)) {
+                    continue;
+                }
+
+                $name = match ($key) {
+                    'type' => 'Type',
+                    'size' => 'Size',
+                    'mtime' => 'Date (last modification time)',
+                    'ctime' => 'Date (last access time)',
+                    'atime' => 'Date (last inode change time)',
+                    'permission' => 'Permission',
+                    'owner' => 'Owner:Group',
+                    'encoding' => 'Encoding',
+                    default => throw new LogicException('Unknown key: ' . $key),
+                };
+
+                $outputArrayGeneral[$name] = $value;
+            }
+            if (count($outputArrayGeneral) > 0) {
+                $outputArray[] = $outputArrayGeneral;
+            }
+        }
+
+        /* Add image values. */
+        if ($this->isImage() && array_key_exists('image', $default)) {
+            $imageConfiguration = $default['image'];
+            $outputArrayGeneral = [];
+            $image = new Image($this);
+
+            foreach ($imageConfiguration as $key) {
+                $value = match ($key) {
+                    'size' => sprintf('%dx%d', $image->getWidth(), $image->getHeight()),
+                    'coordinate' => $image->getCoordinate()?->getStringDMS(),
+                    default => throw new LogicException('Unknown key: ' . $key),
+                };
+
+                if (is_null($value)) {
+                    continue;
+                }
+
+                $name = match ($key) {
+                    'size' => 'Size',
+                    'coordinate' => 'Coordinate',
+                    default => throw new LogicException('Unknown key: ' . $key),
+                };
+
+                $outputArrayGeneral[$name] = $value;
+            }
+
+            if (count($outputArrayGeneral) > 0) {
+                $outputArray[] = $outputArrayGeneral;
+            }
+        }
+
+        /* Add custom values. */
+        $outputArrayCustom = [];
+        if (!is_null($additional)) {
+            foreach ($additional as $name => $value) {
+                $outputArrayCustom[$name] = $value;
+            }
+        }
+        if (count($outputArrayCustom) > 0) {
+            $outputArray[] = $outputArrayCustom;
+        }
+
+        /* Print information. */
+        return $this->getFileInformation(function () use (
+            $nameFull,
+            $outputArray
+        ): string {
+            $output = '';
+            $nameFullLength = !is_null($nameFull) ? mb_strlen($nameFull) : 0;
+            $widthCol1 = max(array_map('mb_strlen', array_merge(...array_map('array_keys', $outputArray))));;
+            $widthCol2 = max(array_map('mb_strlen', array_merge(...array_map('array_values', $outputArray))));
+
+            /* Build name header. */
+            switch (true) {
+                case !is_null($nameFull):
+                    $output .= sprintf(
+                            '┌─%s─┐',
+                            str_repeat('─', $nameFullLength)
+                        ).PHP_EOL;
+                    $output .= sprintf(
+                            '│ %s │',
+                            $nameFull
+                        ).PHP_EOL;
+
+                    $output .= match (true) {
+                        $nameFullLength === $widthCol1 => sprintf(
+                                '├─%s─┼─%s─┐',
+                                str_repeat('─', $widthCol1),
+                                str_repeat('─', $widthCol2)
+                            ).PHP_EOL,
+                        $nameFullLength < $widthCol1 => sprintf(
+                                '├─%s─┴%s┬─%s─┐',
+                                str_repeat('─', $nameFullLength),
+                                str_repeat('─', $widthCol1 - $nameFullLength - 1),
+                                str_repeat('─', $widthCol2)
+                            ).PHP_EOL,
+                        default => sprintf(
+                                '├─%s─┬%s┴─%s─┐',
+                                str_repeat('─', $widthCol1),
+                                str_repeat('─', $nameFullLength - $widthCol1 - 1),
+                                str_repeat('─', $widthCol1 + $widthCol2 - $nameFullLength)
+                            ).PHP_EOL,
+                    };
+                    break;
+
+                default:
+                    $output .= sprintf(
+                            '┌─%s─┬─%s─┐',
+                            str_repeat('─', $widthCol1),
+                            str_repeat('─', $widthCol2)
+                        ).PHP_EOL;
+                    break;
+            }
+
+            /* No detailed information given. */
+            if (count($outputArray) <= 0) {
+                $output .= sprintf(
+                    '└─%s─┘',
+                    str_repeat('─', $nameFullLength)
+                ).PHP_EOL;
+                return $output;
+            }
+
+            /* Build detailed information. */
+            foreach ($outputArray as $index => $outputArraySingle) {
+                foreach ($outputArraySingle as $name => $value) {
+                    $nameUtf8Diff = strlen($name) - mb_strlen($name);
+                    $valueUtf8Diff = strlen((string) $value) - mb_strlen((string) $value);
+
+                    $output .= sprintf(
+                        '│ %s │ %s │',
+                        sprintf(sprintf('%%-%ds', $widthCol1 + $nameUtf8Diff), $name),
+                        sprintf(sprintf('%%-%ds', $widthCol2 + $valueUtf8Diff), $value)
+                    ).PHP_EOL;
+                }
+
+                if ($index + 1 < count($outputArray)) {
+                    $output .= sprintf(
+                            '├─%s─┼─%s─┤',
+                            str_repeat('─', $widthCol1),
+                            str_repeat('─', $widthCol2)
+                        ).PHP_EOL;
+                }
+            }
+            $output .= sprintf(
+                '└─%s─┴─%s─┘',
+                str_repeat('─', $widthCol1),
+                str_repeat('─', $widthCol2)
+            ).PHP_EOL;
+            return $output;
+        });
+    }
+
+    /**
      * The base callback function for method getInformation.
      *
      * @param array<string, int|null> $distance
@@ -254,17 +473,9 @@ class File extends BaseFile
             !empty($distance['mime']) ? -$distance['mime'] : '',
         );
 
-        $type = $this->getType();
         $encoding = $this->getEncoding();
         $mimeType = $this->getMimeType();
-
-        $typeName = match ($type) {
-            BaseFile::TYPE_FILE => 'FILE',
-            BaseFile::TYPE_DIRECTORY => 'DIR',
-            BaseFile::TYPE_SYMLINK => 'LINK',
-            BaseFile::TYPE_UNKNOWN => 'UNKNOWN',
-            default => throw new LogicException(sprintf('Unknown file type: %s', $type)),
-        };
+        $typeName = $this->getTypeName();
 
         return sprintf(
             $template,
@@ -335,29 +546,6 @@ class File extends BaseFile
     }
 
     /**
-     * Returns the real path of this container.
-     *
-     * @return string
-     * @throws FileNotFoundException
-     */
-    public function getPathReal(): string
-    {
-        $realPath = realpath($this->getPath());
-
-        if ($realPath !== false) {
-            return $realPath;
-        }
-
-        $realPath = realpath(sprintf('%s/%s', $this->getDirectoryRoot(), $this->getPath()));
-
-        if ($realPath !== false) {
-            return $realPath;
-        }
-
-        throw new FileNotFoundException($this->getPath());
-    }
-
-    /**
      * Returns directory path of file.
      *
      * @return string
@@ -365,29 +553,6 @@ class File extends BaseFile
     public function getDirectoryPath(): string
     {
         return dirname($this->getPath());
-    }
-
-    /**
-     * Returns the root directory.
-     *
-     * @return string
-     * @throws FileNotFoundException
-     */
-    public function getDirectoryRoot(): string
-    {
-        if (!is_null($this->directoryRoot)) {
-            return $this->directoryRoot;
-        }
-
-        $reflection = new ReflectionClass(ClassLoader::class);
-
-        $fileName = $reflection->getFileName();
-
-        if ($fileName === false) {
-            throw new FileNotFoundException('Composer ClassLoader');
-        }
-
-        return dirname($fileName, 3);
     }
 
     /**
@@ -399,26 +564,6 @@ class File extends BaseFile
     public function getRealDirectoryPath(): string
     {
         return dirname($this->getPathReal());
-    }
-
-    /**
-     * Returns the date according to given path.
-     *
-     * @param string $format
-     * @return string
-     * @throws FileNotFoundException
-     */
-    public function getDate(string $format = self::FORMAT_DATE_DEFAULT): string
-    {
-        $path = $this->getPathReal();
-
-        $mtime = filemtime($path);
-
-        if ($mtime === false) {
-            throw new FileNotFoundException($this->getPath());
-        }
-
-        return date($format, $mtime);
     }
 
     /**

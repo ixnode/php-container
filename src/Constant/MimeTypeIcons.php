@@ -71,4 +71,6 @@ class MimeTypeIcons
 
     /* Other files */
     public const OTHER = '❓'; // .*
+    public const FOLDER = '📁'; // Folder
+    public const SYMLINK = '🔗'; // Folder
 }

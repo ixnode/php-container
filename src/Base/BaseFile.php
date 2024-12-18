@@ -13,20 +13,24 @@ declare(strict_types=1);
 
 namespace Ixnode\PhpContainer\Base;
 
+use Composer\Autoload\ClassLoader;
 use Ixnode\PhpContainer\Constant\MimeTypeIcons;
 use Ixnode\PhpContainer\Constant\MimeTypes;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
+use LogicException;
+use ReflectionClass;
 use Stringable;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Abstract class BaseFile
+ * Abstract class BaseFile (for File, Directory and Symlink)
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2024-12-17)
  * @since 0.1.0 (2024-12-17) First version.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 abstract class BaseFile extends BaseContainer implements Stringable
 {
@@ -46,6 +50,16 @@ abstract class BaseFile extends BaseContainer implements Stringable
 
     public const TYPE_UNKNOWN = 'unknown';
 
+    public const FILE_ATIME = 'atime';
+
+    public const FILE_CTIME = 'ctime';
+
+    public const FILE_MTIME = 'mtime';
+
+    private const FORMAT_DATE_DEFAULT = 'l, F d, Y - H:i:s';
+
+    private ?string $directoryRoot = null;
+
     /**
      * @param string $path
      * @param string|null $rootDir
@@ -55,6 +69,39 @@ abstract class BaseFile extends BaseContainer implements Stringable
         if (!is_null($rootDir)) {
             $this->path = sprintf('%s/%s', $rootDir, $path);
         }
+    }
+
+    /**
+     * Returns the path of this container.
+     *
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return $this->path;
+    }
+
+    /**
+     * Returns the path of this container.
+     *
+     * @return string
+     */
+    public function getPath(): string
+    {
+        return $this->path;
+    }
+
+    /**
+     * Sets the path of this container.
+     *
+     * @param string $path
+     * @return $this
+     */
+    public function setPath(string $path): self
+    {
+        $this->path = $path;
+
+        return $this;
     }
 
     /**
@@ -128,6 +175,175 @@ abstract class BaseFile extends BaseContainer implements Stringable
             $this->isSymlink() => self::TYPE_SYMLINK,
             default => self::TYPE_UNKNOWN,
         };
+    }
+
+    /**
+     * Returns the type name of this file.
+     *
+     * @return string
+     */
+    public function getTypeName(): string
+    {
+        $type = $this->getType();
+
+        return match ($type) {
+            BaseFile::TYPE_FILE => 'FILE',
+            BaseFile::TYPE_DIRECTORY => 'DIR',
+            BaseFile::TYPE_SYMLINK => 'LINK',
+            BaseFile::TYPE_UNKNOWN => 'UNKNOWN',
+            default => throw new LogicException(sprintf('Unknown file type: %s', $type)),
+        };
+    }
+
+    /**
+     * Returns the mtime time according to given path (modification time).
+     *
+     * @param string $format
+     * @param 'atime'|'ctime'|'mtime' $type
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getDate(string $format = self::FORMAT_DATE_DEFAULT, string $type = self::FILE_MTIME): string
+    {
+        $path = $this->getPathReal();
+
+        $time = match ($type) {
+            self::FILE_ATIME => fileatime($path),
+            self::FILE_CTIME => filectime($path),
+            self::FILE_MTIME => filemtime($path),
+        };
+
+        if ($time === false) {
+            throw new FileNotFoundException($this->getPath());
+        }
+
+        return date($format, $time);
+    }
+
+    /**
+     * Return the permissions of the path.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getPermission(): string
+    {
+        $path = $this->getPathReal();
+
+        $filePermissions = fileperms($path);
+
+        if ($filePermissions === false) {
+            throw new FileNotFoundException($this->getPath());
+        }
+
+        return decoct($filePermissions & 0777);
+    }
+
+    /**
+     * Returns the owner of the path.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getOwner(): string
+    {
+        $path = $this->getPathReal();
+
+        $ownerId = fileowner($path);
+
+        if ($ownerId === false) {
+            throw new FileNotFoundException($this->getPath());
+        }
+
+        $ownerInfo = posix_getpwuid($ownerId);
+
+        if ($ownerInfo === false) {
+            throw new FileNotFoundException($this->getPath());
+        }
+
+        return $ownerInfo['name'];
+    }
+
+    /**
+     * Returns the group of the path.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getGroup(): string
+    {
+        $path = $this->getPathReal();
+
+        $groupId = filegroup($path);
+
+        if ($groupId === false) {
+            throw new FileNotFoundException($this->getPath());
+        }
+
+        $groupInfo = posix_getgrgid($groupId);
+
+        if ($groupInfo === false) {
+            throw new FileNotFoundException($this->getPath());
+        }
+
+        return $groupInfo['name'];
+    }
+
+    /**
+     * Returns the owner and group of the path.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getOwnerGroup(): string
+    {
+        return sprintf('%s:%s', $this->getOwner(), $this->getGroup());
+    }
+
+    /**
+     * Returns the real path of this container.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getPathReal(): string
+    {
+        $realPath = realpath($this->getPath());
+
+        if ($realPath !== false) {
+            return $realPath;
+        }
+
+        $realPath = realpath(sprintf('%s/%s', $this->getDirectoryRoot(), $this->getPath()));
+
+        if ($realPath !== false) {
+            return $realPath;
+        }
+
+        throw new FileNotFoundException($this->getPath());
+    }
+
+    /**
+     * Returns the root directory.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getDirectoryRoot(): string
+    {
+        if (!is_null($this->directoryRoot)) {
+            return $this->directoryRoot;
+        }
+
+        $reflection = new ReflectionClass(ClassLoader::class);
+
+        $fileName = $reflection->getFileName();
+
+        if ($fileName === false) {
+            throw new FileNotFoundException('Composer ClassLoader');
+        }
+
+        return dirname($fileName, 3);
     }
 
     /**
@@ -212,30 +428,7 @@ abstract class BaseFile extends BaseContainer implements Stringable
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      */
-    public function getIcon(): string
-    {
-        $mimeType = $this->getMimeType();
-
-        return match (true) {
-
-            /* Configuration and log files. */
-            $mimeType === MimeTypes::APPLICATION_JSON_TYPE,
-            $mimeType === MimeTypes::APPLICATION_YAML_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
-
-            /* Documents. */
-            $mimeType === MimeTypes::TEXT_PLAIN_TYPE => MimeTypeIcons::TEXTS_AND_MARKDOWNS, // .txt, .md, etc.
-
-
-            /* image/svg+xml */
-            $mimeType === MimeTypes::IMAGE_SVG_XML_TYPE => MimeTypeIcons::VECTOR_GRAPHICS, // .svg, etc.
-
-            /* image/ */
-            str_starts_with($mimeType, MimeTypes::GROUP_IMAGE) => MimeTypeIcons::IMAGES, // .png, .jpg, .jpeg, .gif, etc.
-
-            /* other and unknown mime types. */
-            default => MimeTypeIcons::OTHER,
-        };
-    }
+    abstract public function getIcon(): string;
 
     /**
      * Returns the base name of this file.

@@ -28,6 +28,7 @@
     "ext-exif": "*",
     "ext-fileinfo": "*",
     "ext-gd": "*",
+    "ext-posix": "*",
     "ixnode/php-checker": "^0.1.9",
     "ixnode/php-exception": "^0.1.22",
     "ixnode/php-size-byte": "^0.1.2",
