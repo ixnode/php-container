@@ -1530,6 +1530,16 @@ class MimeTypes
         'meaning' => self::TEXT_XML_EXTERNAL_PARSED_ENTITY_MEANING,
     ];
 
+    /* text/x-c++ */
+    public const TEXT_X_CPP_TYPE = 'text/x-c++';
+    public const TEXT_X_CPP_EXTENSIONS = [];
+    public const TEXT_X_CPP_MEANING = 'x-c++ files';
+    public const TEXT_X_CPP = [
+        'type' => self::TEXT_X_CPP_TYPE,
+        'extensions' => self::TEXT_X_CPP_EXTENSIONS,
+        'meaning' => self::TEXT_X_CPP_MEANING,
+    ];
+
     /* text/x-setext */
     public const TEXT_X_SETEXT_TYPE = 'text/x-setext';
     public const TEXT_X_SETEXT_EXTENSIONS = ['.etx'];

@@ -178,7 +178,7 @@ abstract class BaseFile extends BaseContainer implements Stringable
         $mimeType = $this->getMimeTypeRaw();
 
         /* text/plain -> text/yml */
-        if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE) {
+        if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE || $mimeType === MimeTypes::TEXT_X_CPP_TYPE) {
 
 //            $detectedYmlFormat = $this->detectYmlFormat();
 //
