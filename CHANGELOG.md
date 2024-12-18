@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.6] - 2024-12-18
+
+* Update symfony components (v6.2.2 => v7.2.0)
+* Update PHPStan (1.9.4 => 1.12.13)
+* Update PHPMD (2.13.0 => 2.15.0)
+* Update PHPUnit (9.5.27 => 9.6.22)
+
 ### [1.0.5] - 2024-12-18
 
 * Add application/yaml mime type
