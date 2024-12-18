@@ -271,7 +271,11 @@ class Json implements Stringable
         $json = [];
 
         foreach ($this->jsonTranslated as $index => $value) {
-            $json[strval($index)] = strval($value);
+            if (!is_bool($value) && !is_float($value) && !is_int($value) && !is_string($value) && !is_null($value)) {
+                throw new LogicException('Value must be bool, float, int, string or null');
+            }
+
+            $json[(string) $index] = (string) $value;
         }
 
         return $json;
@@ -880,6 +884,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyInteger(int|string|array $keys): int
     {
@@ -904,6 +909,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyFloat(int|string|array $keys): float
     {
@@ -991,7 +997,11 @@ class Json implements Stringable
         $array = [];
 
         foreach ($this->getKeyArray($keys) as $item) {
-            $array[] = strval($item);
+            if (!is_bool($item) && !is_float($item) && !is_int($item) && !is_string($item) && !is_null($item)) {
+                throw new LogicException('Value must be bool, float, int, string or null');
+            }
+            
+            $array[] = (string) $item;
         }
 
         return $array;

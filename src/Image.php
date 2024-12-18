@@ -147,6 +147,10 @@ class Image extends BaseImage
             throw new LogicException('Could not read image string.');
         }
 
+        if (!array_key_exists('bits', $imageInformation)) {
+            throw new LogicException('Unable to find key "bits".');
+        }
+
         return $imageInformation['bits'];
     }
 
@@ -161,6 +165,10 @@ class Image extends BaseImage
 
         if ($imageInformation === false) {
             throw new LogicException('Could not read image string.');
+        }
+
+        if (!array_key_exists('channels', $imageInformation)) {
+            throw new LogicException('Unable to find key "channels".');
         }
 
         return $imageInformation['channels'];
