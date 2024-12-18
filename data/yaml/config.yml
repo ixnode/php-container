@@ -1,0 +1,173 @@
+name: 2025, Mixed, Kalender von Isa (Baden-Württemberg)
+date: 2025-12-06 20:55
+settings:
+    output:
+        quality: 100
+        format: jpg
+        width: 5656
+        height: 4000
+    defaults:
+        year: 2025
+        month: 1
+        design:
+            engine: imagick # gdimage or imagick
+            type: default
+            config:
+                calendar-box-background-transparency: 100
+                image-vertical-align: bottom
+holidays:
+    #Baden-Württemberg
+    '2025-01-01': Neujahr
+    '2025-01-06': Heilige Drei Könige
+    '2025-04-18': Karfreitag
+    '2025-04-21': Ostermontag
+    '2025-05-01': Tag der Arbeit
+    '2025-05-29': Christi Himmelfahrt
+    '2025-06-09': Pfingstmontag
+    '2025-06-19': Fronleichnam
+    '2025-10-03': Tag der Deutschen Einheit
+    '2025-11-01': Allerheiligen
+    '2025-12-25': 1. Weihnachtstag
+    '2025-12-26': 2. Weihnachtstag
+birthdays:
+    '1987-01-11': Jörg
+    '1990-01-15': Laura
+    '2013-02-01': Tammas
+    '1980-02-02': Björn
+    '1979-02-05': Nora
+    '1977-02-10': Maik
+    '2007-02-15': Mila
+    '1979-03-03': Rico
+    '2023-03-12': Robin
+    '2016-04-16': Lias
+    '1951-04-24': Wolfgang
+    '1970-05-06': Heike
+    '1962-05-07': Angelika
+    '1997-05-22': Sebastian
+    '1986-06-17': Juliane
+    '1985-06-28': Mattes
+    '1947-07-07': Ursel
+    '1983-07-27': Ines
+    '1955-08-04': Veronika
+    '1994-08-18': Isabel
+    '1961-08-24': Michael
+    '1970-09-11': Erik
+    '2014-09-18': Lea
+    '2014-09-24': Mikesch
+    '1996-10-09': Marie
+    '2017-11-01': Elli
+    '1976-11-12': Eve
+    '2017-11-14': Luca
+    '2019-11-22': Milan
+    '2016-11-28': Finn
+    '1953-12-07': Margitta
+    '2015-12-10': Jaro
+    '1992-12-17': Anima
+    '1956-12-17': Hermann
+pages:
+    -
+        source: 00.jpg
+        target: ready/2024-00.jpg
+        page-title: Agaete, Gran Canaria, Spanien
+        title: 2025
+        subtitle: by Isabel
+        url: auto
+        coordinate: 28.086310, -15.696201
+        year: 2025
+        month: 0
+    -
+        source: 01.jpg
+        target: ready/2024-01.jpg
+        page-title: Wannaköpfle, Innerbraz, Vorarlberg, Österreich
+        url: auto
+        coordinate: 47.1131934,9.9147559
+        year: 2025
+        month: 1
+    -
+        source: 02.jpg
+        target: ready/2024-02.jpg
+        page-title: Artenara, Gran Canaria, Spanien
+        url: auto
+        coordinate: 28.021378, -15.656449
+        year: 2025
+        month: 2
+    -
+        source: 03.jpg
+        target: ready/2024-03.jpg
+        page-title: Innerberg, Bartholomäberg, Vorarlberg, Österreich
+        url: auto
+        coordinate: 47.099877, 9.945074
+        year: 2025
+        month: 3
+    -
+        source: 04.jpg
+        target: ready/2024-04.jpg
+        page-title: Frösvik, Vaxholm, Stockholm, Schweden
+        url: auto
+        coordinate: 59.4083798,18.1556146
+        year: 2025
+        month: 4
+    -
+        source: 05.jpg
+        target: ready/2024-05.jpg
+        page-title: Puerto de las Nieves, Agaete, Gran Canaria, Spanien
+        url: auto
+        coordinate: 28.1129873,-15.7048092
+        year: 2025
+        month: 5
+    -
+        source: 06.jpg
+        target: ready/2024-06.jpg
+        page-title: Bazora, Frastanz, Vorarlberg, Österreich
+        url: auto
+        coordinate: 47.1887613,9.6220615
+        year: 2025
+        month: 6
+    -
+        source: 07.jpg
+        target: ready/2024-07.jpg
+        page-title: Cruz de Tejeda, Guardaya, Gran Canaria, Spanien
+        url: auto
+        coordinate: 28.0068338,-15.6065645
+        year: 2025
+        month: 7
+    -
+        source: 08.jpg
+        target: ready/2024-08.jpg
+        page-title: Östra Yttringe, Lidingö, Stockholm, Schweden
+        url: auto
+        coordinate: 59.3626188,18.2080425
+        year: 2025
+        month: 8
+    -
+        source: 09.jpg
+        target: ready/2024-09.jpg
+        page-title: Tyktorp, Lidingö, Stockholm, Schweden
+        url: auto
+        coordinate: 59.3942824,18.0920473
+        year: 2025
+        month: 9
+    -
+        source: 10.jpg
+        target: ready/2024-10.jpg
+        page-title: Mirador del Balcón, San Nicolás, Gran Canaria, Spanien
+        url: auto
+        coordinate: 28.0279735,-15.7761596
+        year: 2025
+        month: 10
+    -
+        source: 11.jpg
+        target: ready/2024-11.jpg
+        page-title: Källtorp, Nacka, Stockholm, Schweden
+        url: auto
+        coordinate: 59.2906316,18.1700342
+        year: 2025
+        month: 11
+    -
+        source: 12.jpg
+        target: ready/2024-12.jpg
+        page-title: Puerto de las Nieves, Agaete, Gran Canaria, Spanien
+        url: auto
+        coordinate: 28.108125, -15.705654
+        year: 2025
+        month: 12

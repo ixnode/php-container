@@ -230,6 +230,7 @@ final class FileTest extends TestCase
             [++$number, 'data/json/simple.json', MimeTypes::APPLICATION_JSON_TYPE, MimeTypeIcons::CONFIGURATION_FILES, true, ],
             [++$number, 'data/csv/real.csv', MimeTypes::TEXT_CSV_TYPE, MimeTypeIcons::OTHER, true, ],
             [++$number, 'data/csv/real2.csv', MimeTypes::TEXT_CSV_TYPE, MimeTypeIcons::OTHER, true, ],
+            [++$number, 'data/yaml/config.yml', MimeTypes::APPLICATION_YAML_TYPE, MimeTypeIcons::CONFIGURATION_FILES, true, ],
 
             /* Check images. */
             [++$number, 'data/image/example-basic.jpg', MimeTypes::IMAGE_JPEG_TYPE, MimeTypeIcons::IMAGES, true, ],

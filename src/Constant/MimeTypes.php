@@ -506,6 +506,16 @@ class MimeTypes
         'meaning' => self::APPLICATION_HDF_MEANING,
     ];
 
+    /* application/yaml */
+    public const APPLICATION_YAML_TYPE = 'application/yaml';
+    public const APPLICATION_YAML_EXTENSIONS = ['.yaml', '*.yml'];
+    public const APPLICATION_YAML_MEANING = 'YAML configuration files';
+    public const APPLICATION_YAML_YML = [
+        'type' => self::APPLICATION_YAML_TYPE,
+        'extensions' => self::APPLICATION_YAML_EXTENSIONS,
+        'meaning' => self::APPLICATION_YAML_MEANING,
+    ];
+
     /* application/x-httpd-php */
     public const APPLICATION_X_HTTPD_PHP_TYPE = 'application/x-httpd-php';
     public const APPLICATION_X_HTTPD_PHP_EXTENSIONS = ['.php', '.phtml'];

@@ -18,6 +18,8 @@ use Ixnode\PhpContainer\Constant\MimeTypes;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Stringable;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Abstract class BaseFile
@@ -175,12 +177,28 @@ abstract class BaseFile extends BaseContainer implements Stringable
     {
         $mimeType = $this->getMimeTypeRaw();
 
+        /* text/plain -> text/yml */
+        if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE) {
+
+//            $detectedYmlFormat = $this->detectYmlFormat();
+//
+//            if ($detectedYmlFormat) {
+//                return MimeTypes::TEXT_YML_TYPE;
+//            }
+
+            $extension = $this->getExtension();
+
+            if ($extension === 'yaml' || $extension === 'yml') {
+                return MimeTypes::APPLICATION_YAML_TYPE;
+            }
+        }
+
         /* text/plain -> text/csv */
         if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE) {
             $detectedCsvFormat = $this->detectCsvFormat();
 
             if (!is_null($detectedCsvFormat)) {
-                $mimeType = MimeTypes::TEXT_CSV_TYPE;
+                return MimeTypes::TEXT_CSV_TYPE;
             }
         }
 
@@ -201,10 +219,12 @@ abstract class BaseFile extends BaseContainer implements Stringable
         return match (true) {
 
             /* Configuration and log files. */
-            $mimeType === MimeTypes::APPLICATION_JSON_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
+            $mimeType === MimeTypes::APPLICATION_JSON_TYPE,
+            $mimeType === MimeTypes::APPLICATION_YAML_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
 
             /* Documents. */
             $mimeType === MimeTypes::TEXT_PLAIN_TYPE => MimeTypeIcons::TEXTS_AND_MARKDOWNS, // .txt, .md, etc.
+
 
             /* image/svg+xml */
             $mimeType === MimeTypes::IMAGE_SVG_XML_TYPE => MimeTypeIcons::VECTOR_GRAPHICS, // .svg, etc.
@@ -225,6 +245,16 @@ abstract class BaseFile extends BaseContainer implements Stringable
     public function getBaseName(): string
     {
         return basename($this->path);
+    }
+
+    /**
+     * Returns the base name of this file.
+     *
+     * @return string
+     */
+    public function getExtension(): string
+    {
+        return strtolower(pathinfo($this->path, PATHINFO_EXTENSION));
     }
 
     /**
@@ -271,6 +301,27 @@ abstract class BaseFile extends BaseContainer implements Stringable
         }
 
         return $lines;
+    }
+
+    /**
+     * Detects the yaml format.
+     *
+     * @return bool
+     * @SuppressWarnings(PHPMD.StaticAccess)
+     */
+    protected function detectYmlFormat(): bool
+    {
+        /* File not readable. */
+        if (!is_readable($this->path)) {
+            return false;
+        }
+
+        try {
+            Yaml::parseFile($this->path);
+            return true;
+        } catch (ParseException) {
+            return false;
+        }
     }
 
     /**

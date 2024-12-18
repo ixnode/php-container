@@ -48,7 +48,7 @@ class File extends BaseFile
 
     private const FORMAT_DATE_DEFAULT = 'l, F d, Y - H:i:s';
 
-    private const TEMPLATE_FILE_STANDARD = '%%s %%%ss   [%%%ss]   %%%ss   // %%%ss; %%%ss';
+    private const TEMPLATE_FILE_STANDARD = '%%s %%%ss   [%%%ss]   %%%ss   // %%%ss; %%%ss; %%%ss';
 
     private ?string $directoryRoot = null;
 
@@ -218,6 +218,7 @@ class File extends BaseFile
             'date' => null,
             'encoding' => null,
             'size' => null,
+            'mime' => null,
         ]
     ): string
     {
@@ -250,10 +251,12 @@ class File extends BaseFile
             !empty($distance['date']) ? -$distance['date'] : '',
             !empty($distance['encoding']) ? -$distance['encoding'] : '',
             !empty($distance['size']) ? -$distance['size'] : '',
+            !empty($distance['mime']) ? -$distance['mime'] : '',
         );
 
         $type = $this->getType();
         $encoding = $this->getEncoding();
+        $mimeType = $this->getMimeType();
 
         $typeName = match ($type) {
             BaseFile::TYPE_FILE => 'FILE',
@@ -270,7 +273,8 @@ class File extends BaseFile
             $typeName,
             $this->getDate('Y-m-d H:i:s'),
             $encoding,
-            $this->getFileSizeHuman()
+            $this->getFileSizeHuman(),
+            $mimeType
         );
     }
 
