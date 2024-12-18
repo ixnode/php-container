@@ -1000,7 +1000,7 @@ class Json implements Stringable
             if (!is_bool($item) && !is_float($item) && !is_int($item) && !is_string($item) && !is_null($item)) {
                 throw new LogicException('Value must be bool, float, int, string or null');
             }
-            
+
             $array[] = (string) $item;
         }
 
