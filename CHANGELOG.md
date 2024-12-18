@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.8] - 2024-12-18
+
+* Fix text/x-c++ mime type
+
 ### [1.0.7] - 2024-12-18
 
 * Update symfony/yaml (v6.4.13 => v7.1.6)
