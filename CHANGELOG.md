@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.10] - 2024-12-18
+
+* Add Directory and Symlink object
+* Add directory and file to "bin/php-container ls"
+
 ### [1.0.9] - 2024-12-18
 
 * Add hints
