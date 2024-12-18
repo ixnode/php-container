@@ -73,6 +73,11 @@ class LsCommand extends Command
             return self::INVALID;
         }
 
+        if (!file_exists($path)) {
+            $this->printError(sprintf('Given path does not exists: %s', $path));
+            return self::INVALID;
+        }
+
         return match (true) {
             is_file($path) => $this->printFile($path),
             is_dir($path) => $this->printDirectory($path),
