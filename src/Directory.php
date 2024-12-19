@@ -63,9 +63,10 @@ class Directory extends BaseFile
     /**
      * Returns the files of current directory.
      *
-     * @return string[]
+     * @return ($asObject is true ? File[] : string[])
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function getFiles(): array
+    public function getFiles(bool $asObject = false): array
     {
         if (!is_dir($this->path)) {
             throw new LogicException(sprintf('The provided path is not a directory: %s', $this->path));
@@ -86,7 +87,7 @@ class Directory extends BaseFile
             $path = sprintf('%s%s%s', $this->path, DIRECTORY_SEPARATOR, $item);
 
             if (is_file($path)) {
-                $files[] = basename($path);
+                $files[] = $asObject ? new File($path) : basename($path);
             }
         }
 
@@ -106,9 +107,10 @@ class Directory extends BaseFile
     /**
      * Returns the directories of the current directory.
      *
-     * @return string[]
+     * @return ($asObject is true ? Directory[] : string[])
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function getDirectories(): array
+    public function getDirectories(bool $asObject = false): array
     {
         if (!is_dir($this->path)) {
             throw new LogicException(sprintf('The provided path is not a directory: %s', $this->path));
@@ -129,7 +131,7 @@ class Directory extends BaseFile
             $path = sprintf('%s%s%s', $this->path, DIRECTORY_SEPARATOR, $item);
 
             if (is_dir($path)) {
-                $directories[] = basename($path);
+                $directories[] = $asObject ? new Directory($path) : basename($path);
             }
         }
 
@@ -225,6 +227,8 @@ class Directory extends BaseFile
      *
      * @param array<string, array<int, string>> $default
      * @param array<string, string> $additional
+     * @param (callable(File[]): array<string, string>)|null $callbackFiles
+     * @param (callable(Directory[]): array<string, string>)|null $callbackDirectories
      * @return string
      * @throws FileNotFoundException
      * @throws FileNotReadableException
@@ -245,6 +249,8 @@ class Directory extends BaseFile
             ]
         ],
         array $additional = null,
+        callable $callbackFiles = null,
+        callable $callbackDirectories = null,
     ): string
     {
         /* Get name of the file. */
@@ -252,6 +258,28 @@ class Directory extends BaseFile
             array_key_exists('general', $default) && in_array('name', $default['general'], true) => sprintf('%s %s', $this->getIcon(), $this->getBaseName()),
             default => null,
         };
+
+        /* Add files callback. */
+        if (is_null($callbackFiles)) {
+            $callbackFiles = function (array $files): array
+            {
+                $outputArrayFiles = [];
+                foreach ($files as $file) {
+                    $outputArrayFiles[$file->getBaseName()] = $file->getFileInformation();
+                }
+                return $outputArrayFiles;
+            };
+        }
+        if (is_null($callbackDirectories)) {
+            $callbackDirectories = function (array $directories): array
+            {
+                $outputArrayDirectories = [];
+                foreach ($directories as $directory) {
+                    $outputArrayDirectories[$directory->getBaseName()] = $directory->getDirectoryInformation();
+                }
+                return $outputArrayDirectories;
+            };
+        }
 
         $outputArray = [];
 
@@ -301,30 +329,20 @@ class Directory extends BaseFile
             $outputArray[] = $outputArrayCustom;
         }
 
+
+
         /* Add files. */
-        $files = $this->getFiles();
+        $files = $this->getFiles(true);
         $outputArrayFiles = [];
         if (count($files) > 0) {
-            $outputArrayFilesTmp = [];
-            foreach ($files as $fileName) {
-                $path = sprintf('%s%s%s', $this->path, DIRECTORY_SEPARATOR, $fileName);
-                $file = new File($path);
-                $outputArrayFilesTmp[$file->getBaseName()] = $file->getFileInformation();
-            }
-            $outputArrayFiles[] = $outputArrayFilesTmp;
+            $outputArrayFiles[] = $callbackFiles($files);
         }
 
         /* Add directories. */
-        $directories = $this->getDirectories();
+        $directories = $this->getDirectories(true);
         $outputArrayDirectories = [];
         if (count($directories) > 0) {
-            $outputArrayDirectoriesTmp = [];
-            foreach ($directories as $directoryName) {
-                $path = sprintf('%s%s%s', $this->path, DIRECTORY_SEPARATOR, $directoryName);
-                $directory = new Directory($path);
-                $outputArrayDirectoriesTmp[$directory->getBaseName()] = $directory->getDirectoryInformation();
-            }
-            $outputArrayDirectories[] = $outputArrayDirectoriesTmp;
+            $outputArrayDirectories[] = $callbackDirectories($directories);
         }
 
         /* Print information. */
