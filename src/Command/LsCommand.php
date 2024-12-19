@@ -167,7 +167,7 @@ class LsCommand extends Command
     {
         $this->writer->write(PHP_EOL);
         $this->writer->write('1) Default output (@see \Ixnode\PhpContainer\File::getFileInformation)'.PHP_EOL);
-        $this->writer->write($file->getFileInformation(), true);
+        $this->writer->write($file->getFileInformationOneLiner(), true);
     }
 
     /**
@@ -182,7 +182,7 @@ class LsCommand extends Command
     {
         $this->writer->write(PHP_EOL);
         $this->writer->write('1) Default output (@see \Ixnode\PhpContainer\Directory::getDirectoryInformation)'.PHP_EOL);
-        $this->writer->write($directory->getDirectoryInformation(), true);
+        $this->writer->write($directory->getDirectoryInformationOneLiner(), true);
     }
 
     /**
@@ -202,7 +202,7 @@ class LsCommand extends Command
 
         $this->writer->write(PHP_EOL);
         $this->writer->write('2) Callback output 1 (@see \Ixnode\PhpContainer\Command\LsCommand::printFileCustom1)'.PHP_EOL);
-        $this->writer->write($file->getFileInformation(function ($file, $distance): string {
+        $this->writer->write($file->getFileInformationOneLiner(function ($file, $distance): string {
             $template = '%%s %%%ss   [%%%ss]';
 
             $template = sprintf(
@@ -247,7 +247,7 @@ class LsCommand extends Command
 
         $this->writer->write(PHP_EOL);
         $this->writer->write('2) Callback output 1 (@see \Ixnode\PhpContainer\Command\LsCommand::printDirectoryCustom1)'.PHP_EOL);
-        $this->writer->write($directory->getDirectoryInformation(function ($directory, $distance): string {
+        $this->writer->write($directory->getDirectoryInformationOneLiner(function ($directory, $distance): string {
             $template = '%%s %%%ss   [%%%ss]';
 
             $template = sprintf(

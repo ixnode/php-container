@@ -57,7 +57,7 @@ class Directory extends BaseFile
      */
     public function getIcon(): string
     {
-        return MimeTypeIcons::FOLDER;
+        return MimeTypeIcons::DIRECTORY;
     }
 
     /**
@@ -167,6 +167,28 @@ class Directory extends BaseFile
     }
 
     /**
+     * Returns base information about the file.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getDirectoryInformation(): string
+    {
+        $template = '%s // %s';
+
+        $parts = [];
+
+        $parts[] = $this->getNumberOfFilesHuman();
+        $parts[] = $this->getNumberOfDirectoriesHuman();
+
+        return sprintf(
+            $template,
+            $this->getDate('Y-m-d H:i:s'),
+            implode(', ', $parts)
+        );
+    }
+
+    /**
      * Returns information about this folder (one-liner).
      *
      * @param (callable(Directory, array<string, int|null>): string)|null $callback A callback that receives the current File instance and returns a string.
@@ -175,7 +197,7 @@ class Directory extends BaseFile
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      */
-    public function getDirectoryInformation(
+    public function getDirectoryInformationOneLiner(
         callable $callback = null,
         array $distance = [
             'directory' => null,
@@ -268,36 +290,6 @@ class Directory extends BaseFile
             }
         }
 
-        /* Add files. */
-        $files = $this->getFiles();
-        if (count($files) > 0) {
-            $outputArrayFiles = [];
-
-            foreach ($files as $number => $file) {
-                $value = $file;
-                $name = sprintf('File %s', $number + 1);
-
-                $outputArrayFiles[$name] = $value;
-            }
-
-            $outputArray[] = $outputArrayFiles;
-        }
-
-        /* Add directories. */
-        $directories = $this->getDirectories();
-        if (count($directories) > 0) {
-            $outputArrayDirectories = [];
-
-            foreach ($directories as $number => $directory) {
-                $value = $directory;
-                $name = sprintf('Directory %s', $number + 1);
-
-                $outputArrayDirectories[$name] = $value;
-            }
-
-            $outputArray[] = $outputArrayDirectories;
-        }
-
         /* Add custom values. */
         $outputArrayCustom = [];
         if (!is_null($additional)) {
@@ -309,93 +301,42 @@ class Directory extends BaseFile
             $outputArray[] = $outputArrayCustom;
         }
 
+        /* Add files. */
+        $files = $this->getFiles();
+        $outputArrayFiles = [];
+        if (count($files) > 0) {
+            $outputArrayFilesTmp = [];
+            foreach ($files as $fileName) {
+                $path = sprintf('%s%s%s', $this->path, DIRECTORY_SEPARATOR, $fileName);
+                $file = new File($path);
+                $outputArrayFilesTmp[$file->getBaseName()] = $file->getFileInformation();
+            }
+            $outputArrayFiles[] = $outputArrayFilesTmp;
+        }
+
+        /* Add directories. */
+        $directories = $this->getDirectories();
+        $outputArrayDirectories = [];
+        if (count($directories) > 0) {
+            $outputArrayDirectoriesTmp = [];
+            foreach ($directories as $directoryName) {
+                $path = sprintf('%s%s%s', $this->path, DIRECTORY_SEPARATOR, $directoryName);
+                $directory = new Directory($path);
+                $outputArrayDirectoriesTmp[$directory->getBaseName()] = $directory->getDirectoryInformation();
+            }
+            $outputArrayDirectories[] = $outputArrayDirectoriesTmp;
+        }
+
         /* Print information. */
-        return $this->getDirectoryInformation(function () use (
+        return $this->getDirectoryInformationOneLiner(function (Directory $directory) use (
             $nameFull,
-            $outputArray
+            $outputArray,
+            $outputArrayFiles,
+            $outputArrayDirectories
         ): string {
-            $output = '';
-            $nameFullLength = !is_null($nameFull) ? mb_strlen($nameFull) + 1 : 0;
-            $widthCol1 = max(array_map('mb_strlen', array_merge(...array_map('array_keys', $outputArray))));;
-            $widthCol2 = max(array_map('mb_strlen', array_merge(...array_map('array_values', $outputArray))));
-
-            /* Build name header. */
-            switch (true) {
-                case !is_null($nameFull):
-                    $output .= sprintf(
-                            '┌─%s─┐',
-                            str_repeat('─', $nameFullLength)
-                        ).PHP_EOL;
-                    $output .= sprintf(
-                            '│ %s │',
-                            $nameFull
-                        ).PHP_EOL;
-
-                    $output .= match (true) {
-                        $nameFullLength === $widthCol1 => sprintf(
-                                '├─%s─┼─%s─┐',
-                                str_repeat('─', $widthCol1),
-                                str_repeat('─', $widthCol2)
-                            ).PHP_EOL,
-                        $nameFullLength < $widthCol1 => sprintf(
-                                '├─%s─┴%s┬─%s─┐',
-                                str_repeat('─', $nameFullLength),
-                                str_repeat('─', $widthCol1 - $nameFullLength - 1),
-                                str_repeat('─', $widthCol2)
-                            ).PHP_EOL,
-                        default => sprintf(
-                                '├─%s─┬%s┴─%s─┐',
-                                str_repeat('─', $widthCol1),
-                                str_repeat('─', $nameFullLength - $widthCol1 - 1),
-                                str_repeat('─', $widthCol1 + $widthCol2 - $nameFullLength)
-                            ).PHP_EOL,
-                    };
-                    break;
-
-                default:
-                    $output .= sprintf(
-                            '┌─%s─┬─%s─┐',
-                            str_repeat('─', $widthCol1),
-                            str_repeat('─', $widthCol2)
-                        ).PHP_EOL;
-                    break;
-            }
-
-            /* No detailed information given. */
-            if (count($outputArray) <= 0) {
-                $output .= sprintf(
-                        '└─%s─┘',
-                        str_repeat('─', $nameFullLength)
-                    ).PHP_EOL;
-                return $output;
-            }
-
-            /* Build detailed information. */
-            foreach ($outputArray as $index => $outputArraySingle) {
-                foreach ($outputArraySingle as $name => $value) {
-                    $nameUtf8Diff = strlen($name) - mb_strlen($name);
-                    $valueUtf8Diff = strlen((string) $value) - mb_strlen((string) $value);
-
-                    $output .= sprintf(
-                            '│ %s │ %s │',
-                            sprintf(sprintf('%%-%ds', $widthCol1 + $nameUtf8Diff), $name),
-                            sprintf(sprintf('%%-%ds', $widthCol2 + $valueUtf8Diff), $value)
-                        ).PHP_EOL;
-                }
-
-                if ($index + 1 < count($outputArray)) {
-                    $output .= sprintf(
-                            '├─%s─┼─%s─┤',
-                            str_repeat('─', $widthCol1),
-                            str_repeat('─', $widthCol2)
-                        ).PHP_EOL;
-                }
-            }
-            $output .= sprintf(
-                    '└─%s─┴─%s─┘',
-                    str_repeat('─', $widthCol1),
-                    str_repeat('─', $widthCol2)
-                ).PHP_EOL;
+            $output = $directory->buildTable($nameFull, $outputArray);
+            $output .= $directory->buildTable(MimeTypeIcons::FILE.' files', $outputArrayFiles);
+            $output .= $directory->buildTable(MimeTypeIcons::DIRECTORY.' folders', $outputArrayDirectories);
             return $output;
         });
     }

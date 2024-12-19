@@ -159,11 +159,62 @@ class File extends BaseFile
     /**
      * Returns the mime type of the file.
      *
-     * @inheritdoc
+     * @return string
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    protected function getMimeTypeRaw(): string
+    {
+        if (!file_exists($this->path)) {
+            throw new FileNotFoundException($this->path);
+        }
+
+        $mimeType = mime_content_type($this->path);
+
+        if ($mimeType === false) {
+            throw new FileNotReadableException($this->path);
+        }
+
+        return $mimeType;
+    }
+
+    /**
+     * Returns the mime type of the file.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
      */
     public function getMimeType(): string
     {
-        return parent::getMimeType();
+        $mimeType = $this->getMimeTypeRaw();
+
+        /* text/plain -> text/yml */
+        if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE || $mimeType === MimeTypes::TEXT_X_CPP_TYPE) {
+
+//            $detectedYmlFormat = $this->detectYmlFormat();
+//
+//            if ($detectedYmlFormat) {
+//                return MimeTypes::TEXT_YML_TYPE;
+//            }
+
+            $extension = $this->getExtension();
+
+            if ($extension === 'yaml' || $extension === 'yml') {
+                return MimeTypes::APPLICATION_YAML_TYPE;
+            }
+        }
+
+        /* text/plain -> text/csv */
+        if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE) {
+            $detectedCsvFormat = $this->detectCsvFormat();
+
+            if (!is_null($detectedCsvFormat)) {
+                return MimeTypes::TEXT_CSV_TYPE;
+            }
+        }
+
+        return $mimeType;
     }
 
     /**
@@ -197,6 +248,37 @@ class File extends BaseFile
     }
 
     /**
+     * Returns base information about the file.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    public function getFileInformation(): string
+    {
+        $template = '%s // %s';
+
+        $parts = [];
+
+        $encoding = $this->getEncoding();
+        $fileSize = $this->getFileSizeHuman();
+        $mimeType = $this->getMimeType();
+
+        if ($encoding) {
+            $parts[] = $encoding;
+        }
+
+        $parts[] = $fileSize;
+        $parts[] = $mimeType;
+
+        return sprintf(
+            $template,
+            $this->getDate('Y-m-d H:i:s'),
+            implode(', ', $parts)
+        );
+    }
+
+    /**
      * Returns information about this file (one-liner).
      *
      * @param (callable(File, array<string, int|null>): string)|null $callback A callback that receives the current File instance and returns a string.
@@ -205,7 +287,7 @@ class File extends BaseFile
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      */
-    public function getFileInformation(
+    public function getFileInformationOneLiner(
         callable $callback = null,
         array $distance = [
             'file' => null,
@@ -363,94 +445,7 @@ class File extends BaseFile
         }
 
         /* Print information. */
-        return $this->getFileInformation(function () use (
-            $nameFull,
-            $outputArray
-        ): string {
-            $output = '';
-            $nameFullLength = !is_null($nameFull) ? mb_strlen($nameFull) : 0;
-            $widthCol1 = max(array_map('mb_strlen', array_merge(...array_map('array_keys', $outputArray))));;
-            $widthCol2 = max(array_map('mb_strlen', array_merge(...array_map('array_values', $outputArray))));
-
-            /* Build name header. */
-            switch (true) {
-                case !is_null($nameFull):
-                    $output .= sprintf(
-                            '┌─%s─┐',
-                            str_repeat('─', $nameFullLength)
-                        ).PHP_EOL;
-                    $output .= sprintf(
-                            '│ %s │',
-                            $nameFull
-                        ).PHP_EOL;
-
-                    $output .= match (true) {
-                        $nameFullLength === $widthCol1 => sprintf(
-                                '├─%s─┼─%s─┐',
-                                str_repeat('─', $widthCol1),
-                                str_repeat('─', $widthCol2)
-                            ).PHP_EOL,
-                        $nameFullLength < $widthCol1 => sprintf(
-                                '├─%s─┴%s┬─%s─┐',
-                                str_repeat('─', $nameFullLength),
-                                str_repeat('─', $widthCol1 - $nameFullLength - 1),
-                                str_repeat('─', $widthCol2)
-                            ).PHP_EOL,
-                        default => sprintf(
-                                '├─%s─┬%s┴─%s─┐',
-                                str_repeat('─', $widthCol1),
-                                str_repeat('─', $nameFullLength - $widthCol1 - 1),
-                                str_repeat('─', $widthCol1 + $widthCol2 - $nameFullLength)
-                            ).PHP_EOL,
-                    };
-                    break;
-
-                default:
-                    $output .= sprintf(
-                            '┌─%s─┬─%s─┐',
-                            str_repeat('─', $widthCol1),
-                            str_repeat('─', $widthCol2)
-                        ).PHP_EOL;
-                    break;
-            }
-
-            /* No detailed information given. */
-            if (count($outputArray) <= 0) {
-                $output .= sprintf(
-                    '└─%s─┘',
-                    str_repeat('─', $nameFullLength)
-                ).PHP_EOL;
-                return $output;
-            }
-
-            /* Build detailed information. */
-            foreach ($outputArray as $index => $outputArraySingle) {
-                foreach ($outputArraySingle as $name => $value) {
-                    $nameUtf8Diff = strlen($name) - mb_strlen($name);
-                    $valueUtf8Diff = strlen((string) $value) - mb_strlen((string) $value);
-
-                    $output .= sprintf(
-                        '│ %s │ %s │',
-                        sprintf(sprintf('%%-%ds', $widthCol1 + $nameUtf8Diff), $name),
-                        sprintf(sprintf('%%-%ds', $widthCol2 + $valueUtf8Diff), $value)
-                    ).PHP_EOL;
-                }
-
-                if ($index + 1 < count($outputArray)) {
-                    $output .= sprintf(
-                            '├─%s─┼─%s─┤',
-                            str_repeat('─', $widthCol1),
-                            str_repeat('─', $widthCol2)
-                        ).PHP_EOL;
-                }
-            }
-            $output .= sprintf(
-                '└─%s─┴─%s─┘',
-                str_repeat('─', $widthCol1),
-                str_repeat('─', $widthCol2)
-            ).PHP_EOL;
-            return $output;
-        });
+        return $this->getFileInformationOneLiner(fn(File $file): string => $file->buildTable($nameFull, $outputArray));
     }
 
     /**

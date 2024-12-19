@@ -16,6 +16,8 @@ namespace Ixnode\PhpContainer\Base;
 use Composer\Autoload\ClassLoader;
 use Ixnode\PhpContainer\Constant\MimeTypeIcons;
 use Ixnode\PhpContainer\Constant\MimeTypes;
+use Ixnode\PhpContainer\Directory;
+use Ixnode\PhpContainer\File;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use LogicException;
@@ -113,9 +115,17 @@ abstract class BaseFile extends BaseContainer implements Stringable
      */
     public function isImage(): bool
     {
-        $mimeType = $this->getMimeType();
+        if ($this instanceof Directory) {
+            return false;
+        }
 
-        return str_starts_with($mimeType, 'image/');
+        if ($this instanceof File) {
+            $mimeType = $this->getMimeType();
+
+            return str_starts_with($mimeType, 'image/');
+        }
+
+        return false;
     }
 
     /**
@@ -127,9 +137,17 @@ abstract class BaseFile extends BaseContainer implements Stringable
      */
     public function isCsv(): bool
     {
-        $mimeType = $this->getMimeType();
+        if ($this instanceof Directory) {
+            return false;
+        }
 
-        return $mimeType === MimeTypes::TEXT_CSV_TYPE;
+        if ($this instanceof File) {
+            $mimeType = $this->getMimeType();
+
+            return $mimeType === MimeTypes::TEXT_CSV_TYPE;
+        }
+
+        return false;
     }
 
     /**
@@ -361,67 +379,6 @@ abstract class BaseFile extends BaseContainer implements Stringable
     }
 
     /**
-     * Returns the mime type of the file.
-     *
-     * @return string
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     */
-    protected function getMimeTypeRaw(): string
-    {
-        if (!file_exists($this->path)) {
-            throw new FileNotFoundException($this->path);
-        }
-
-        $mimeType = mime_content_type($this->path);
-
-        if ($mimeType === false) {
-            throw new FileNotReadableException($this->path);
-        }
-
-        return $mimeType;
-    }
-
-    /**
-     * Returns the mime type of the file.
-     *
-     * @return string
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     */
-    protected function getMimeType(): string
-    {
-        $mimeType = $this->getMimeTypeRaw();
-
-        /* text/plain -> text/yml */
-        if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE || $mimeType === MimeTypes::TEXT_X_CPP_TYPE) {
-
-//            $detectedYmlFormat = $this->detectYmlFormat();
-//
-//            if ($detectedYmlFormat) {
-//                return MimeTypes::TEXT_YML_TYPE;
-//            }
-
-            $extension = $this->getExtension();
-
-            if ($extension === 'yaml' || $extension === 'yml') {
-                return MimeTypes::APPLICATION_YAML_TYPE;
-            }
-        }
-
-        /* text/plain -> text/csv */
-        if ($mimeType === MimeTypes::TEXT_PLAIN_TYPE) {
-            $detectedCsvFormat = $this->detectCsvFormat();
-
-            if (!is_null($detectedCsvFormat)) {
-                return MimeTypes::TEXT_CSV_TYPE;
-            }
-        }
-
-        return $mimeType;
-    }
-
-    /**
      * Returns the icon of the file.
      *
      * @return string
@@ -438,6 +395,18 @@ abstract class BaseFile extends BaseContainer implements Stringable
     public function getBaseName(): string
     {
         return basename($this->path);
+    }
+
+    /**
+     * Returns the name with icon.
+     *
+     * @return string
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    public function getNameWithIcon(): string
+    {
+        return sprintf('%s %s', $this->getIcon(), $this->getBaseName());
     }
 
     /**
@@ -615,5 +584,114 @@ abstract class BaseFile extends BaseContainer implements Stringable
         }
 
         return $count;
+    }
+
+    /**
+     * Build output table.
+     *
+     * @param string|null $name
+     * @param array<int, array<string, string>> $outputArray
+     * @return string
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    protected function buildTable(string|null $name, array $outputArray): string
+    {
+        /* No element to print. */
+        if (array_map('array_keys', $outputArray) === []) {
+            return '';
+        }
+
+        $output = '';
+        $nameFullLength = !is_null($name) ? grapheme_strlen($name) + 1 : 0;
+        $widthCol1 = max(array_map('grapheme_strlen', array_merge(...array_map('array_keys', $outputArray))));
+        $widthCol2 = max(array_map('grapheme_strlen', array_merge(...array_map('array_values', $outputArray))));
+
+        if (!is_int($widthCol1)) {
+            throw new LogicException('Unable to determine width of the column');
+        }
+        if (!is_int($widthCol2)) {
+            throw new LogicException('Unable to determine width of the column');
+        }
+
+        /* Build name header. */
+        switch (true) {
+            case !is_null($name):
+                $output .= sprintf(
+                        '┌─%s─┐',
+                        str_repeat('─', $nameFullLength)
+                    ).PHP_EOL;
+                $output .= sprintf(
+                        '│ %s │',
+                        $name
+                    ).PHP_EOL;
+
+                $output .= match (true) {
+                    $nameFullLength === $widthCol1 => sprintf(
+                            '├─%s─┼─%s─┐',
+                            str_repeat('─', $widthCol1),
+                            str_repeat('─', $widthCol2)
+                        ).PHP_EOL,
+                    $nameFullLength < $widthCol1 => sprintf(
+                            '├─%s─┴%s┬─%s─┐',
+                            str_repeat('─', $nameFullLength),
+                            str_repeat('─', $widthCol1 - $nameFullLength - 1),
+                            str_repeat('─', $widthCol2)
+                        ).PHP_EOL,
+                    default => sprintf(
+                            '├─%s─┬%s┴─%s─┐',
+                            str_repeat('─', $widthCol1),
+                            str_repeat('─', $nameFullLength - $widthCol1 - 1),
+                            str_repeat('─', $widthCol1 + $widthCol2 - $nameFullLength)
+                        ).PHP_EOL,
+                };
+                break;
+
+            default:
+                $output .= sprintf(
+                        '┌─%s─┬─%s─┐',
+                        str_repeat('─', $widthCol1),
+                        str_repeat('─', $widthCol2)
+                    ).PHP_EOL;
+                break;
+        }
+
+        /* No detailed information given. */
+        if (count($outputArray) <= 0) {
+            $output .= sprintf(
+                    '└─%s─┘',
+                    str_repeat('─', $nameFullLength)
+                ).PHP_EOL;
+            return $output;
+        }
+
+        /* Build detailed information. */
+        foreach ($outputArray as $index => $outputArraySingle) {
+            foreach ($outputArraySingle as $key => $value) {
+                $nameUtf8Diff = strlen($key) - grapheme_strlen($key);
+                $valueUtf8Diff = strlen((string) $value) - grapheme_strlen((string) $value);
+
+                $output .= sprintf(
+                        '│ %s │ %s │',
+                        sprintf(sprintf('%%-%ds', $widthCol1 + $nameUtf8Diff), $key),
+                        sprintf(sprintf('%%-%ds', $widthCol2 + $valueUtf8Diff), $value)
+                    ).PHP_EOL;
+            }
+
+            if ($index + 1 < count($outputArray)) {
+                $output .= sprintf(
+                        '├─%s─┼─%s─┤',
+                        str_repeat('─', $widthCol1),
+                        str_repeat('─', $widthCol2)
+                    ).PHP_EOL;
+            }
+        }
+        $output .= sprintf(
+                '└─%s─┴─%s─┘',
+                str_repeat('─', $widthCol1),
+                str_repeat('─', $widthCol2)
+            ).PHP_EOL;
+
+        return $output;
     }
 }
