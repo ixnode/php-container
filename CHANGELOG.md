@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.15] - 2024-12-19
+
+* Add additionalBlocks parameter to Directory::getDirectoryInformationTable
+
 ### [1.0.14] - 2024-12-19
 
 * Add false option to directory and file callback for the option to skip
