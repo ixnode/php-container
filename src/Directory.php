@@ -227,8 +227,8 @@ class Directory extends BaseFile
      *
      * @param array<string, array<int, string>> $default
      * @param array<string, string> $additional
-     * @param (callable(File[]): array<string, string>)|null $callbackFiles
-     * @param (callable(Directory[]): array<string, string>)|null $callbackDirectories
+     * @param (callable(File[]): array<string, string>)|null|false $callbackFiles
+     * @param (callable(Directory[]): array<string, string>)|null|false $callbackDirectories
      * @return string
      * @throws FileNotFoundException
      * @throws FileNotReadableException
@@ -249,8 +249,8 @@ class Directory extends BaseFile
             ]
         ],
         array $additional = null,
-        callable $callbackFiles = null,
-        callable $callbackDirectories = null,
+        callable|null|false $callbackFiles = null,
+        callable|null|false $callbackDirectories = null,
     ): string
     {
         /* Get name of the file. */
@@ -329,20 +329,22 @@ class Directory extends BaseFile
             $outputArray[] = $outputArrayCustom;
         }
 
-
-
         /* Add files. */
-        $files = $this->getFiles(true);
         $outputArrayFiles = [];
-        if (count($files) > 0) {
-            $outputArrayFiles[] = $callbackFiles($files);
+        if (is_callable($callbackFiles)) {
+            $files = $this->getFiles(true);
+            if (count($files) > 0) {
+                $outputArrayFiles[] = $callbackFiles($files);
+            }
         }
 
         /* Add directories. */
-        $directories = $this->getDirectories(true);
         $outputArrayDirectories = [];
-        if (count($directories) > 0) {
-            $outputArrayDirectories[] = $callbackDirectories($directories);
+        if (is_callable($callbackDirectories)) {
+            $directories = $this->getDirectories(true);
+            if (count($directories) > 0) {
+                $outputArrayDirectories[] = $callbackDirectories($directories);
+            }
         }
 
         /* Print information. */
