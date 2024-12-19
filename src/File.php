@@ -348,12 +348,6 @@ class File extends BaseFile
         array $additional = null,
     ): string
     {
-        /* Get name of the file. */
-        $nameFull = match (true) {
-            array_key_exists('general', $default) && in_array('name', $default['general'], true) => sprintf('%s %s', $this->getIcon(), $this->getBaseName()),
-            default => null,
-        };
-
         $outputArray = [];
 
         /* Add default values. */
@@ -445,7 +439,11 @@ class File extends BaseFile
         }
 
         /* Print information. */
-        return $this->getFileInformationOneLiner(fn(File $file): string => $file->buildTable($nameFull, $outputArray));
+        return $this->getFileInformationOneLiner(fn(File $file): string => $file->buildTable(
+            name: $this->getBaseName(),
+            outputArray: $outputArray,
+            icon: $this->getIcon()
+        ));
     }
 
     /**

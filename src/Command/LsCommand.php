@@ -18,6 +18,7 @@ use Ahc\Cli\Output\Color;
 use Ahc\Cli\Output\Writer;
 use Exception;
 use Ixnode\PhpContainer\Base\BaseFile;
+use Ixnode\PhpContainer\Constant\MimeTypeIcons;
 use Ixnode\PhpContainer\Directory;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -312,8 +313,22 @@ class LsCommand extends Command
         $this->writer->write('3) Callback output 2 (@see \Ixnode\PhpContainer\Command\LsCommand::printDirectoryCustom2)'.PHP_EOL);
         $this->writer->write(PHP_EOL);
 
-        $this->writer->write($directory->getDirectoryInformationTable(additional: [
-            'Description' => 'Some more information about this directory.',
-        ]), true);
+        $this->writer->write($directory->getDirectoryInformationTable(
+            additional: [
+                'Description' => 'Some more information about this directory.',
+            ],
+            additionalBlocks: [
+                [
+                    'name' => 'Additional',
+                    'icon' => MimeTypeIcons::CALENDAR,
+                    'blocks' => [
+                        [
+                            'Info 1' => 'Additional text 1',
+                            'Info 2' => 'Additional text 2',
+                        ]
+                    ]
+                ],
+            ]
+        ), true);
     }
 }

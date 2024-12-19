@@ -227,6 +227,7 @@ class Directory extends BaseFile
      *
      * @param array<string, array<int, string>> $default
      * @param array<string, string> $additional
+     * @param array<int, array{name?: string|null, icon?: string|null, blocks: array<int, array<string, string>>}> $additionalBlocks
      * @param (callable(File[]): array<string, string>)|null|false $callbackFiles
      * @param (callable(Directory[]): array<string, string>)|null|false $callbackDirectories
      * @return string
@@ -249,16 +250,11 @@ class Directory extends BaseFile
             ]
         ],
         array $additional = null,
+        array $additionalBlocks = null,
         callable|null|false $callbackFiles = null,
         callable|null|false $callbackDirectories = null,
     ): string
     {
-        /* Get name of the file. */
-        $nameFull = match (true) {
-            array_key_exists('general', $default) && in_array('name', $default['general'], true) => sprintf('%s %s', $this->getIcon(), $this->getBaseName()),
-            default => null,
-        };
-
         /* Add files callback. */
         if (is_null($callbackFiles)) {
             $callbackFiles = function (array $files): array
@@ -347,16 +343,44 @@ class Directory extends BaseFile
             }
         }
 
+        /* Add additional blocks. */
+        $outputArrayAdditionalBlocks = !is_null($additionalBlocks) ? $additionalBlocks : [];
+
         /* Print information. */
         return $this->getDirectoryInformationOneLiner(function (Directory $directory) use (
-            $nameFull,
             $outputArray,
             $outputArrayFiles,
-            $outputArrayDirectories
+            $outputArrayDirectories,
+            $outputArrayAdditionalBlocks
         ): string {
-            $output = $directory->buildTable($nameFull, $outputArray);
-            $output .= $directory->buildTable(MimeTypeIcons::FILE.' files', $outputArrayFiles);
-            $output .= $directory->buildTable(MimeTypeIcons::DIRECTORY.' folders', $outputArrayDirectories);
+            $output = $directory->buildTable(
+                name: $directory->getBaseName(),
+                icon: $directory->getIcon(),
+                outputArray: $outputArray,
+            );
+            $output .= $directory->buildTable(
+                name: 'files',
+                icon: MimeTypeIcons::FILE,
+                outputArray: $outputArrayFiles
+            );
+            $output .= $directory->buildTable(
+                name: 'folders',
+                icon: MimeTypeIcons::DIRECTORY,
+                outputArray: $outputArrayDirectories
+            );
+
+            foreach ($outputArrayAdditionalBlocks as $outputArrayAdditionalBlock) {
+                $name = array_key_exists('name', $outputArrayAdditionalBlock) ? $outputArrayAdditionalBlock['name'] : 'Additional block';
+                $icon = array_key_exists('icon', $outputArrayAdditionalBlock) ? $outputArrayAdditionalBlock['icon'] : null;
+                $blocks = $outputArrayAdditionalBlock['blocks'];
+
+                $output .= $directory->buildTable(
+                    name: $name,
+                    icon: $icon,
+                    outputArray: $blocks
+                );
+            }
+
             return $output;
         });
     }

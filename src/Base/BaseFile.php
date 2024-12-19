@@ -590,12 +590,17 @@ abstract class BaseFile extends BaseContainer implements Stringable
      * Build output table.
      *
      * @param string|null $name
+     * @param string|null $icon
      * @param array<int, array<string, string>> $outputArray
      * @return string
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
-    protected function buildTable(string|null $name, array $outputArray): string
+    protected function buildTable(
+        string|null $name,
+        string|null $icon = null,
+        array $outputArray = [],
+    ): string
     {
         /* No element to print. */
         if (array_map('array_keys', $outputArray) === []) {
@@ -603,7 +608,21 @@ abstract class BaseFile extends BaseContainer implements Stringable
         }
 
         $output = '';
-        $nameFullLength = !is_null($name) ? grapheme_strlen($name) + 1 : 0;
+        $iconLength = !is_null($icon) ? grapheme_strlen($icon) : 0;
+        $nameLength = !is_null($name) ? grapheme_strlen($name) : 0;
+
+        if (!is_int($iconLength)) {
+            throw new LogicException('Icon length must be an integer');
+        }
+        if (!is_int($nameLength)) {
+            throw new LogicException('Name length must be an integer');
+        }
+
+        if (!is_null($name) && !is_null($icon)) {
+            $name = sprintf('%s %s', $icon, $name);
+            $nameLength += $iconLength + 2;
+        }
+
         $widthCol1 = max(array_map('grapheme_strlen', array_merge(...array_map('array_keys', $outputArray))));
         $widthCol2 = max(array_map('grapheme_strlen', array_merge(...array_map('array_values', $outputArray))));
 
@@ -619,7 +638,7 @@ abstract class BaseFile extends BaseContainer implements Stringable
             case !is_null($name):
                 $output .= sprintf(
                         '┌─%s─┐',
-                        str_repeat('─', $nameFullLength)
+                        str_repeat('─', $nameLength)
                     ).PHP_EOL;
                 $output .= sprintf(
                         '│ %s │',
@@ -627,22 +646,22 @@ abstract class BaseFile extends BaseContainer implements Stringable
                     ).PHP_EOL;
 
                 $output .= match (true) {
-                    $nameFullLength === $widthCol1 => sprintf(
+                    $nameLength === $widthCol1 => sprintf(
                             '├─%s─┼─%s─┐',
                             str_repeat('─', $widthCol1),
                             str_repeat('─', $widthCol2)
                         ).PHP_EOL,
-                    $nameFullLength < $widthCol1 => sprintf(
+                    $nameLength < $widthCol1 => sprintf(
                             '├─%s─┴%s┬─%s─┐',
-                            str_repeat('─', $nameFullLength),
-                            str_repeat('─', $widthCol1 - $nameFullLength - 1),
+                            str_repeat('─', $nameLength),
+                            str_repeat('─', $widthCol1 - $nameLength - 1),
                             str_repeat('─', $widthCol2)
                         ).PHP_EOL,
                     default => sprintf(
                             '├─%s─┬%s┴─%s─┐',
                             str_repeat('─', $widthCol1),
-                            str_repeat('─', $nameFullLength - $widthCol1 - 1),
-                            str_repeat('─', $widthCol1 + $widthCol2 - $nameFullLength)
+                            str_repeat('─', $nameLength - $widthCol1 - 1),
+                            str_repeat('─', $widthCol1 + $widthCol2 - $nameLength)
                         ).PHP_EOL,
                 };
                 break;
@@ -660,7 +679,7 @@ abstract class BaseFile extends BaseContainer implements Stringable
         if (count($outputArray) <= 0) {
             $output .= sprintf(
                     '└─%s─┘',
-                    str_repeat('─', $nameFullLength)
+                    str_repeat('─', $nameLength)
                 ).PHP_EOL;
             return $output;
         }
