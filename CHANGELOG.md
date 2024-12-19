@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.13] - 2024-12-19
+
+* Add directory and file callback to Directory::getDirectoryInformationTable
+
 ### [1.0.12] - 2024-12-19
 
 * File and directory list output optimization
