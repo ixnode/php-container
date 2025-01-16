@@ -594,6 +594,7 @@ abstract class BaseFile extends BaseContainer implements Stringable
      * @param array<int, array<string, string>> $outputArray
      * @return string
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     protected function buildTable(
