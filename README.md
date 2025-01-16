@@ -125,13 +125,40 @@ $array = (new Json('{"data": "json"}'))->getArray();
 $array = (new Json(new File('path-to-json-file')))->getArray();
 ```
 
+#### 2.2.4) Access to JSON object
+
 ```php
-[
-    "data" => "Content of file 'path-to-json-file'.",
-]
+$json = (new Json([
+    'key1' => 'value1',
+    'key2' => [
+        'associative' => [
+            'name' => 'Test',
+            'id' => 123
+        ],
+        'indexed' => [1, 2, 3],
+    ],
+    'key3' => 'value3',
+    'key4' => 'value4',
+    'key5' => 'value5',
+]));
 ```
 
-#### 2.2.4) Build a new `array` from JSON
+```php
+print $json->getKeyString(['key2', 'associative', 'name']);
+// return value: (string) 'Test'
+```
+
+```php
+print $json->getKeyInteger(['key2', 'indexed', 0]);
+// return value: (int) 1
+```
+
+```php
+print_r($json->getKeyArray(['key2', 'indexed']));
+// return value: (array) [1, 2, 3]
+```
+
+#### 2.2.5) Build a new `array` from JSON
 
 ```php
 $array = (new Json('[{"key1": 111, "key2": "222"},{"key1": 333, "key2": "444"}]'))->buildArray(
