@@ -822,6 +822,26 @@ class Json implements Stringable
     }
 
     /**
+     * Returns the given key as string length representation.
+     *
+     * @param string|string[] $keys
+     * @return int
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getKeyStringLength(string|array $keys): int
+    {
+        $value = $this->getKeyString($keys);
+
+        return mb_strlen($value);
+    }
+
+    /**
      * Returns the given key as lower-cased string representation.
      *
      * @param string|string[] $keys
