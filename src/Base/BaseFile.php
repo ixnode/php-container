@@ -150,6 +150,28 @@ abstract class BaseFile extends BaseContainer implements Stringable
     }
 
     /**
+     * Returns whether this file is a json file.
+     *
+     * @return bool
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    public function isJson(): bool
+    {
+        if ($this instanceof Directory) {
+            return false;
+        }
+
+        if ($this instanceof File) {
+            $mimeType = $this->getMimeType();
+
+            return $mimeType === MimeTypes::APPLICATION_JSON_TYPE;
+        }
+
+        return false;
+    }
+
+    /**
      * Returns if this file is a file.
      *
      * @return bool

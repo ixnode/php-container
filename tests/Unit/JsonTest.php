@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Ixnode\PhpContainer\Tests\Unit;
 
 use Exception;
+use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -32,6 +33,7 @@ use PHPUnit\Framework\TestCase;
  * @version 0.1.0 (2022-12-30)
  * @since 0.1.0 (2022-12-30) First version.
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 final class JsonTest extends TestCase
 {
@@ -72,7 +74,7 @@ final class JsonTest extends TestCase
         $number = 0;
 
         return [
-            /* Valid values */
+            /* Valid values (json data) */
             [++$number, '[]', [], ],
             [++$number, '[1, 2, 3]', [1, 2, 3, ], ],
             [++$number, '{}', [], ],
@@ -80,13 +82,20 @@ final class JsonTest extends TestCase
             [++$number, [], [], ],
             [++$number, [1, 2, 3, ], [1, 2, 3, ], ],
             [++$number, ["1" => 1, "2" => 2, ], ["1" => 1, "2" => 2, ], ],
+
+            /* Valid values (object data) */
             [++$number, (object)[], [], ],
             [++$number, (object)[1, 2, 3, ], [1, 2, 3, ], ],
             [++$number, (object)["1" => 1, "2" => 2, ], ["1" => 1, "2" => 2, ], ],
+
+            /* Valid values (Json object) */
             [++$number, new Json('[]'), [], ],
             [++$number, new Json('[1, 2, 3]'), [1, 2, 3, ], ],
             [++$number, new Json('{}'), [], ],
             [++$number, new Json('{"1": 1, "2": 2}'), ["1" => 1, "2" => 2, ], ],
+
+            /* Valid values (File object) */
+            [++$number, new File('data/json/simple.json'), ["data" => "Testdata."], ],
 
             /* Invalid values */
             [++$number, '', TypeInvalidException::class, ],

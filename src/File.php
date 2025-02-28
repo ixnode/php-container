@@ -230,7 +230,7 @@ class File extends BaseFile
 
             /* Configuration and log files. */
             $mimeType === MimeTypes::APPLICATION_JSON_TYPE,
-                $mimeType === MimeTypes::APPLICATION_YAML_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
+            $mimeType === MimeTypes::APPLICATION_YAML_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
 
             /* Documents. */
             $mimeType === MimeTypes::TEXT_PLAIN_TYPE => MimeTypeIcons::TEXTS_AND_MARKDOWNS, // .txt, .md, etc.
