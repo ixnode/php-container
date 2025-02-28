@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.17] - 2025-01-16
+
+* Add fixes according to PHPStan
+
 ### [1.0.16] - 2025-01-16
 
 * Add getKeyStringLength method to JSON object
