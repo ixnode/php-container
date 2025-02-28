@@ -1107,7 +1107,7 @@ class Json implements Stringable
     public function setJson(string|object|array $json): self
     {
         $this->json = match (true) {
-            $json instanceof $this => $json->getArray(),
+            $json instanceof $this, $json instanceof Json => $json->getArray(),
             $json instanceof File => $this->convertJsonToArray($json->getContentAsText()),
             is_string($json) => $this->convertJsonToArray($json),
             is_array($json) => $json,
