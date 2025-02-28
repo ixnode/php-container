@@ -49,6 +49,9 @@
     "bin/php-container"
   ],
   "scripts": {
+
+    "php:use": "sudo update-alternatives --set php \"$(cat .phprc)\" && echo && echo -n \"Switched to version: \" && php -r \"echo PHP_VERSION;\" && echo",
+
     "ixno:header": "bin/header/ixno",
 
     "phpmnd:all": "bin/header/phpmnd 'vendor/bin/phpmnd run src tests --progress --hint --include-numeric-string --ignore-funcs=round,sleep' 'all'",
