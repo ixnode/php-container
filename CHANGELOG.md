@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.19] - 2025-02-28
+
+* Add isJson method to File object
+* Add JSON file tests
+
 ### [1.0.18] - 2025-02-28
 
 * Add PHPCS tests
