@@ -288,7 +288,7 @@ class File extends BaseFile
      * @throws FileNotReadableException
      */
     public function getFileInformationOneLiner(
-        callable $callback = null,
+        callable|null $callback = null,
         array $distance = [
             'file' => null,
             'type' => null,
@@ -345,7 +345,7 @@ class File extends BaseFile
                 'coordinate',
             ]
         ],
-        array $additional = null,
+        array|null $additional = null,
     ): string
     {
         $outputArray = [];

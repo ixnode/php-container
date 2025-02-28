@@ -200,7 +200,7 @@ class Directory extends BaseFile
      * @throws FileNotReadableException
      */
     public function getDirectoryInformationOneLiner(
-        callable $callback = null,
+        callable|null $callback = null,
         array $distance = [
             'directory' => null,
             'type' => null,
@@ -249,8 +249,8 @@ class Directory extends BaseFile
                 'owner',
             ]
         ],
-        array $additional = null,
-        array $additionalBlocks = null,
+        array|null $additional = null,
+        array|null $additionalBlocks = null,
         callable|null|false $callbackFiles = null,
         callable|null|false $callbackDirectories = null,
     ): string
