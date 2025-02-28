@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Ixnode\PhpContainer\Base;
 
 use Composer\Autoload\ClassLoader;
-use Ixnode\PhpContainer\Constant\MimeTypeIcons;
 use Ixnode\PhpContainer\Constant\MimeTypes;
 use Ixnode\PhpContainer\Directory;
 use Ixnode\PhpContainer\File;

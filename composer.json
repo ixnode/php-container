@@ -82,6 +82,7 @@
       "@ixno:header",
       "@phpmnd",
       "@phpunit",
+      "@phpcs",
       "@phpstan",
       "@phpmd"
     ],
@@ -92,6 +93,7 @@
       "@ixno:header",
       "@phpmnd",
       "@phpunit",
+      "@phpcs",
       "@phpstan",
       "@phpmd"
     ],
@@ -102,6 +104,7 @@
       "@ixno:header",
       "@phpmnd",
       "@phpunit",
+      "@phpcs",
       "@phpstan",
       "@phpmd",
       "@rector"
