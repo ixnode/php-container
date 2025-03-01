@@ -786,6 +786,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      * @SuppressWarnings(PHPMD.BooleanGetMethodName)
      */
     public function getKeyBoolean(string|array $keys): bool
@@ -805,6 +806,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyString(string|array $keys): string
     {
@@ -815,6 +817,35 @@ class Json implements Stringable
         }
 
         if (!is_string($value)) {
+            throw new TypeInvalidException('string', gettype($value));
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns the given key as string representation.
+     *
+     * @param string|string[] $keys
+     * @return string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getKeyStringNull(string|array $keys): string|null
+    {
+        $value = $this->getKey($keys);
+
+        if (is_int($value)) {
+            $value = (string) $value;
+        }
+
+        if (!is_string($value) && !is_null($value)) {
             throw new TypeInvalidException('string', gettype($value));
         }
 
@@ -833,6 +864,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyStringLength(string|array $keys): int
     {
@@ -853,6 +885,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyStringToLower(string|array $keys): string
     {
@@ -871,6 +904,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyStringUcFirst(string|array $keys): string
     {
