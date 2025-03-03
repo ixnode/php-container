@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Ixnode\PhpContainer\Base;
 
 use Composer\Autoload\ClassLoader;
+use DateTimeImmutable;
 use Ixnode\PhpContainer\Constant\MimeTypes;
 use Ixnode\PhpContainer\Directory;
 use Ixnode\PhpContainer\File;
@@ -235,14 +236,13 @@ abstract class BaseFile extends BaseContainer implements Stringable
     }
 
     /**
-     * Returns the mtime time according to given path (modification time).
+     * Returns the DateTimeImmutable object according to given type.
      *
-     * @param string $format
      * @param 'atime'|'ctime'|'mtime' $type
-     * @return string
+     * @return DateTimeImmutable
      * @throws FileNotFoundException
      */
-    public function getDate(string $format = self::FORMAT_DATE_DEFAULT, string $type = self::FILE_MTIME): string
+    public function getDateTimeImmutable(string $type = self::FILE_MTIME): DateTimeImmutable
     {
         $path = $this->getPathReal();
 
@@ -256,7 +256,20 @@ abstract class BaseFile extends BaseContainer implements Stringable
             throw new FileNotFoundException($this->getPath());
         }
 
-        return date($format, $time);
+        return (new DateTimeImmutable())->setTimestamp($time);
+    }
+
+    /**
+     * Returns the formatted date time according to given type.
+     *
+     * @param string $format
+     * @param 'atime'|'ctime'|'mtime' $type
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public function getDate(string $format = self::FORMAT_DATE_DEFAULT, string $type = self::FILE_MTIME): string
+    {
+        return $this->getDateTimeImmutable($type)->format($format);
     }
 
     /**
