@@ -1,7 +1,7 @@
 {
   "name": "ixnode/php-container",
   "description": "PHP Container - A collection of various PHP container classes like JSON, File, etc.",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "type": "library",
   "license": "MIT",
   "keywords": ["php", "container", "json", "file", "data"],

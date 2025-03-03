@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.24] - 2025-03-01
+
+* Add getDateTimeImmutable method to File object
+
 ### [1.0.23] - 2025-03-01
 
 * Add Json::getKeyStringNull method
