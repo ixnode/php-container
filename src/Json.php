@@ -687,6 +687,30 @@ class Json implements Stringable
     }
 
     /**
+     * Returns the JSON keys.
+     *
+     * @param int|string|array<int, mixed>|null $keys
+     * @return int[]|string[]
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getKeys(int|string|array|null $keys = null): array
+    {
+        $array = match (true) {
+            is_null($keys) => $this->getArray(),
+            default => $this->getKeyArray($keys),
+        };
+
+        return array_keys($array);
+    }
+
+    /**
      * Returns the given key as mixed representation.
      *
      * @param int|string|array<int, mixed> $keys
