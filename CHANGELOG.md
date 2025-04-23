@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
-### [1.0.25] - 2025-04-016
+### [1.0.26] - 2025-04-23
+
+* Add getJsonString function (JSON output without formatting)
+
+### [1.0.25] - 2025-04-16
 
 * Add getKeys method to Json object
 
