@@ -186,18 +186,16 @@ class Json implements Stringable
     }
 
     /**
-     * Converts a given array into a json string.
+     * Converts a given array into a JSON string.
      *
      * @param array<int|string, mixed> $json
+     * @param int $flags
      * @return string
      * @throws FunctionJsonEncodeException
      */
-    protected function convertArrayToJson(array $json): string
+    protected function convertArrayToJson(array $json, int $flags = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE): string
     {
-        $encoded = json_encode(
-            $json,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-        );
+        $encoded = json_encode($json, $flags);
 
         if ($encoded === false) {
             throw new FunctionJsonEncodeException();
@@ -223,7 +221,7 @@ class Json implements Stringable
     }
 
     /**
-     * Returns the json data of this container (as formatted string).
+     * Returns the JSON data of this container (as formatted string).
      *
      * @return string
      * @throws FunctionJsonEncodeException
@@ -240,7 +238,24 @@ class Json implements Stringable
     }
 
     /**
-     * Returns the json data of this container (as object).
+     * Returns the JSON data of this container.
+     *
+     * @return string
+     * @throws FunctionJsonEncodeException
+     */
+    public function getJsonString(): string
+    {
+        $json = $this->convertArrayToJson($this->jsonTranslated, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if ($json === '[]') {
+            $json = '{}';
+        }
+
+        return $json;
+    }
+
+    /**
+     * Returns the JSON data of this container (as object).
      *
      * @return object
      * @throws TypeInvalidException
