@@ -186,18 +186,16 @@ class Json implements Stringable
     }
 
     /**
-     * Converts a given array into a json string.
+     * Converts a given array into a JSON string.
      *
      * @param array<int|string, mixed> $json
+     * @param int $flags
      * @return string
      * @throws FunctionJsonEncodeException
      */
-    protected function convertArrayToJson(array $json): string
+    protected function convertArrayToJson(array $json, int $flags = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE): string
     {
-        $encoded = json_encode(
-            $json,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-        );
+        $encoded = json_encode($json, $flags);
 
         if ($encoded === false) {
             throw new FunctionJsonEncodeException();
@@ -223,7 +221,7 @@ class Json implements Stringable
     }
 
     /**
-     * Returns the json data of this container (as formatted string).
+     * Returns the JSON data of this container (as formatted string).
      *
      * @return string
      * @throws FunctionJsonEncodeException
@@ -240,7 +238,24 @@ class Json implements Stringable
     }
 
     /**
-     * Returns the json data of this container (as object).
+     * Returns the JSON data of this container.
+     *
+     * @return string
+     * @throws FunctionJsonEncodeException
+     */
+    public function getJsonString(): string
+    {
+        $json = $this->convertArrayToJson($this->jsonTranslated, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if ($json === '[]') {
+            $json = '{}';
+        }
+
+        return $json;
+    }
+
+    /**
+     * Returns the JSON data of this container (as object).
      *
      * @return object
      * @throws TypeInvalidException
@@ -687,6 +702,30 @@ class Json implements Stringable
     }
 
     /**
+     * Returns the JSON keys.
+     *
+     * @param int|string|array<int, mixed>|null $keys
+     * @return int[]|string[]
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getKeys(int|string|array|null $keys = null): array
+    {
+        $array = match (true) {
+            is_null($keys) => $this->getArray(),
+            default => $this->getKeyArray($keys),
+        };
+
+        return array_keys($array);
+    }
+
+    /**
      * Returns the given key as mixed representation.
      *
      * @param int|string|array<int, mixed> $keys
@@ -786,6 +825,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      * @SuppressWarnings(PHPMD.BooleanGetMethodName)
      */
     public function getKeyBoolean(string|array $keys): bool
@@ -805,6 +845,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyString(string|array $keys): string
     {
@@ -815,6 +856,35 @@ class Json implements Stringable
         }
 
         if (!is_string($value)) {
+            throw new TypeInvalidException('string', gettype($value));
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns the given key as string representation.
+     *
+     * @param string|string[] $keys
+     * @return string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getKeyStringNull(string|array $keys): string|null
+    {
+        $value = $this->getKey($keys);
+
+        if (is_int($value)) {
+            $value = (string) $value;
+        }
+
+        if (!is_string($value) && !is_null($value)) {
             throw new TypeInvalidException('string', gettype($value));
         }
 
@@ -833,6 +903,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyStringLength(string|array $keys): int
     {
@@ -853,6 +924,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyStringToLower(string|array $keys): string
     {
@@ -871,6 +943,7 @@ class Json implements Stringable
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getKeyStringUcFirst(string|array $keys): string
     {
@@ -1107,7 +1180,7 @@ class Json implements Stringable
     public function setJson(string|object|array $json): self
     {
         $this->json = match (true) {
-            $json instanceof $this => $json->getArray(),
+            $json instanceof $this, $json instanceof Json => $json->getArray(),
             $json instanceof File => $this->convertJsonToArray($json->getContentAsText()),
             is_string($json) => $this->convertJsonToArray($json),
             is_array($json) => $json,

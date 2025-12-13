@@ -171,7 +171,7 @@ abstract class BaseImage implements Stringable
      */
     protected function getImageStringUnresized(
         string $format = self::FORMAT_JPG,
-        int $quality = null
+        int|null $quality = null
     ): string|null
     {
         $gdImage = $this->getGdImage();
@@ -208,7 +208,7 @@ abstract class BaseImage implements Stringable
     protected function getImageStringResized(
         int $width,
         string $format = self::FORMAT_JPG,
-        int $quality = null,
+        int|null $quality = null,
     ): string|null
     {
 

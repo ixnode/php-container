@@ -54,9 +54,9 @@ class Image extends BaseImage
      * @return string|null
      */
     public function getImageString(
-        int $width = null,
+        int|null $width = null,
         string $format = self::FORMAT_JPG,
-        int $quality = null,
+        int|null $quality = null,
     ): string|null
     {
         return match (true) {

@@ -1,7 +1,7 @@
 {
   "name": "ixnode/php-container",
   "description": "PHP Container - A collection of various PHP container classes like JSON, File, etc.",
-  "version": "1.0.16",
+  "version": "1.0.26",
   "type": "library",
   "license": "MIT",
   "keywords": ["php", "container", "json", "file", "data"],
@@ -34,7 +34,7 @@
     "ixnode/php-size-byte": "^0.1.2",
     "ixnode/php-naming-conventions": "^0.1.1",
     "ixnode/php-coordinate": "^1.0",
-    "symfony/yaml": "7.1.*"
+    "symfony/yaml": "^7.2"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5",
@@ -49,6 +49,9 @@
     "bin/php-container"
   ],
   "scripts": {
+
+    "php:use": "sudo update-alternatives --set php \"$(cat .phprc)\" && echo && echo -n \"Switched to version: \" && php -r \"echo PHP_VERSION;\" && echo",
+
     "ixno:header": "bin/header/ixno",
 
     "phpmnd:all": "bin/header/phpmnd 'vendor/bin/phpmnd run src tests --progress --hint --include-numeric-string --ignore-funcs=round,sleep' 'all'",
@@ -82,6 +85,7 @@
       "@ixno:header",
       "@phpmnd",
       "@phpunit",
+      "@phpcs",
       "@phpstan",
       "@phpmd"
     ],
@@ -92,6 +96,7 @@
       "@ixno:header",
       "@phpmnd",
       "@phpunit",
+      "@phpcs",
       "@phpstan",
       "@phpmd"
     ],
@@ -102,6 +107,7 @@
       "@ixno:header",
       "@phpmnd",
       "@phpunit",
+      "@phpcs",
       "@phpstan",
       "@phpmd",
       "@rector"

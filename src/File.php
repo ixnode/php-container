@@ -231,7 +231,7 @@ class File extends BaseFile
 
             /* Configuration and log files. */
             $mimeType === MimeTypes::APPLICATION_JSON_TYPE,
-                $mimeType === MimeTypes::APPLICATION_YAML_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
+            $mimeType === MimeTypes::APPLICATION_YAML_TYPE => MimeTypeIcons::CONFIGURATION_FILES, // .yml, .yaml, .json, etc.
 
             /* Documents. */
             $mimeType === MimeTypes::TEXT_PLAIN_TYPE => MimeTypeIcons::TEXTS_AND_MARKDOWNS, // .txt, .md, etc.
@@ -289,7 +289,7 @@ class File extends BaseFile
      * @throws FileNotReadableException
      */
     public function getFileInformationOneLiner(
-        callable $callback = null,
+        callable|null $callback = null,
         array $distance = [
             'file' => null,
             'type' => null,
@@ -346,7 +346,7 @@ class File extends BaseFile
                 'coordinate',
             ]
         ],
-        array $additional = null,
+        array|null $additional = null,
     ): string
     {
         $outputArray = [];

@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.26] - 2025-04-23
+
+* Add getJsonString function (JSON output without formatting)
+
+### [1.0.25] - 2025-04-16
+
+* Add getKeys method to Json object
+
+### [1.0.24] - 2025-03-01
+
+* Add getDateTimeImmutable method to File object
+
+### [1.0.23] - 2025-03-01
+
+* Add Json::getKeyStringNull method
+
+### [1.0.22] - 2025-02-28
+
+* Allow derivatives of Json to be passed as Json parameters
+
+### [1.0.21] - 2025-02-28
+
+* Update symfony/yaml parser from to 7.1 to 7.2
+
+### [1.0.20] - 2025-02-28
+
+* Add .phprc file
+* Add php switcher to composer.json
+
+### [1.0.19] - 2025-02-28
+
+* Add isJson method to File object
+* Add JSON file tests
+
+### [1.0.18] - 2025-02-28
+
+* Add PHPCS tests
+* Add the version to test header
+* Fixes to PHPCS
+
+### [1.0.17] - 2025-02-28
+
+* Add fixes according to PHPStan
+
 ### [1.0.16] - 2025-01-16
 
 * Add getKeyStringLength method to JSON object
