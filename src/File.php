@@ -50,12 +50,13 @@ class File extends BaseFile
     private const TEMPLATE_FILE_STANDARD = '%%s %%%ss   [%%%ss]   %%%ss   // %%%ss; %%%ss; %%%ss';
 
     /**
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function __construct(string $path, ?string $rootDir = null)
+    public function __construct(string $path, ?string $rootDir = null, bool $checkExistence = true)
     {
         parent::__construct($path, $rootDir);
 
-        if (!$this->isFile()) {
+        if ($checkExistence && !$this->isFile()) {
             throw new LogicException('Given path is not a file.');
         }
     }
