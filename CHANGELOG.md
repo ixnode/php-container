@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Releases
 
+### [1.0.27] - 2025-12-13
+
+* Add checkExistence parameter to File.php
+
 ### [1.0.26] - 2025-04-23
 
 * Add getJsonString function (JSON output without formatting)
